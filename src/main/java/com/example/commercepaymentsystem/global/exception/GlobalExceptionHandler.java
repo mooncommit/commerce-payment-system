@@ -1,6 +1,5 @@
 package com.example.commercepaymentsystem.global.exception;
 
-import com.example.commercepaymentsystem.global.error.BusinessException;
 import com.example.commercepaymentsystem.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

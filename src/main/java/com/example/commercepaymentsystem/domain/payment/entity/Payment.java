@@ -1,8 +1,9 @@
 package com.example.commercepaymentsystem.domain.payment.entity;
 
+import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
+import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,10 +14,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Long orderId;
 
+    @Column(nullable = false)
     private Long memberId;
 
     @Enumerated(EnumType.STRING)
@@ -31,9 +36,8 @@ public class Payment extends BaseEntity {
 
     private Long pgAmount;
 
+    @Column(nullable = false, unique = true)
     private String portonePaymentId;
 
     private String portoneTransactionId;
-
-
 }
