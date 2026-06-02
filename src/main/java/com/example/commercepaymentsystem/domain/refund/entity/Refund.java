@@ -1,5 +1,12 @@
 package com.example.commercepaymentsystem.domain.refund.entity;
 
+import com.example.commercepaymentsystem.domain.refund.enums.RefundStatus;
+import com.example.commercepaymentsystem.global.entity.BaseEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 @Entity
 @Table(name = "refunds")
 @Getter
@@ -10,20 +17,28 @@ public class Refund extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Long paymentId;
 
+    @Column(nullable = false)
     private Long orderId;
 
+    @Column(nullable = false)
     private Long memberId;
 
-    @Enumerated(EnumType.STRING)
-    private RefundStatus refundStatus;
-
-    private String reason;
-
+    @Column(nullable = false)
     private Long refundTotalAmount;
 
+    @Column(nullable = false)
     private Long refundPointAmount;
 
+    @Column(nullable = false)
     private Long refundPgAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RefundStatus refundStatus;
+
+    @Column(length = 255)
+    private String reason;
 }
