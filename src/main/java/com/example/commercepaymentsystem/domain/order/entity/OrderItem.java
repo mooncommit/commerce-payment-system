@@ -1,7 +1,7 @@
 package com.example.commercepaymentsystem.domain.order.entity;
 
 import com.example.commercepaymentsystem.domain.product.entity.Product;
-import com.example.commercepaymentsystem.global.common.BaseEntity;
+import com.example.commercepaymentsystem.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -25,11 +25,15 @@ public class OrderItem extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    private String productNameSnapshot;
+    @Column(nullable = false, length = 100)
+    private String productName;
 
-    private Long unitPriceSnapshot;
+    @Column(nullable = false)
+    private Long unitPrice;
 
+    @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false)
     private Long lineTotalAmount;
 }
