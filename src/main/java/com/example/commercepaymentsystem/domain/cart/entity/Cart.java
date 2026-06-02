@@ -13,7 +13,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "cart")
+@Table(name = "carts")
 public class Cart extends BaseEntity {
 
     @Id
