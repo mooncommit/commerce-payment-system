@@ -37,6 +37,7 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'// 실제 JWT 생성/검증 구현체
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5' // JSON 직렬화 처리
     testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springframework.boot:spring-boot-starter-security' //스프링세큐리티 의존성
 }
 
 tasks.named('test') {
