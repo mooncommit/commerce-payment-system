@@ -1,4 +1,4 @@
-package com.example.commercepaymentsystem.domain.member.dto;
+package com.example.commercepaymentsystem.domain.auth.dto;
 
 import com.example.commercepaymentsystem.domain.member.enums.MemberShip;
 import lombok.Getter;
@@ -14,7 +14,7 @@ public class CreateMemberResponse {
     private final String phoneNumber;
     private final Long pointBalance;
     private final MemberShip memberShip;
-    private final LocalDateTime createAt;
+    private final LocalDateTime createdAt;
 
     public CreateMemberResponse(Long id, String email, String name, String phoneNumber, Long pointBalance, MemberShip memberShip, LocalDateTime createAt) {
         this.id = id;
@@ -23,6 +23,6 @@ public class CreateMemberResponse {
         this.phoneNumber = phoneNumber;
         this.pointBalance = pointBalance;
         this.memberShip = memberShip;
-        this.createAt = createAt;
+        this.createdAt = createAt;
     }
 }

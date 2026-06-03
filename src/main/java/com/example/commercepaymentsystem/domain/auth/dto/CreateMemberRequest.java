@@ -1,4 +1,4 @@
-package com.example.commercepaymentsystem.domain.member.dto;
+package com.example.commercepaymentsystem.domain.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
