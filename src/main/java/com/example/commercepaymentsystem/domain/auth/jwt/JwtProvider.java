@@ -4,13 +4,11 @@ import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import com.example.commercepaymentsystem.global.exception.JwtTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -26,8 +24,8 @@ public class JwtProvider {
 
     public JwtProvider(
             @Value("${jwt.secret}") String secretKey,
-            @Value("${jwt.access.token.expiry}") long accessTokenExpirationTime,
-            @Value("${jwt.refresh.token.expiry}") long refreshTokenExpirationTime
+            @Value("${jwt.access.token.expiration}") long accessTokenExpirationTime,
+            @Value("${jwt.refresh.token.expiration}") long refreshTokenExpirationTime
     ) {
         this.key = Keys.hmacShaKeyFor(
                 secretKey.getBytes(StandardCharsets.UTF_8) // secretKey 문자열 → JWT 서명용 SecretKey 객체 변환
