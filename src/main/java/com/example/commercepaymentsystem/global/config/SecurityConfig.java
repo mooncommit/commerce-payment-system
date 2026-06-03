@@ -1,5 +1,6 @@
 package com.example.commercepaymentsystem.global.config;
 
+import com.example.commercepaymentsystem.domain.auth.jwt.JwtAuthenticationEntryPoint;
 import com.example.commercepaymentsystem.domain.auth.jwt.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtFilter jwtfilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain sercuritySecurityFilterChain(HttpSecurity http) throws Exception {
@@ -26,17 +28,19 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // csrf = 세션공격방지 : 비활성화
                 .formLogin(AbstractHttpConfigurer::disable)// 기본로그인페이지 : 비활성화
                 .httpBasic(AbstractHttpConfigurer::disable)// 기본 ID/PW 인증 : 비활성화
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/signup",
-                                "/api/auth/login",
-                                "/api/auth/reissue"
+                                .requestMatchers(
+                                        "/api/auth/signup",
+                                        "/api/auth/login",
+                                        "/api/auth/reissue"
 //                                "/actuator/health"
-                        ).permitAll()
+                                ).permitAll()
 
-                        .anyRequest().authenticated()
+                                .anyRequest().authenticated()
                 )
 
                 .addFilterBefore(
