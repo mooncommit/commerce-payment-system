@@ -10,13 +10,21 @@ ErrorCode Enum 클래스
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode implements BaseCode {
-
+    // ── Token ──────────────────────────────────────────────
+    EMPTY_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_001","토큰이 비어 있습니다."),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_002","유효하지 않은 토큰입니다."),
+    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_003","만료된 토큰입니다."),
+    UNSUPPORTED_TOKEN(HttpStatus.UNAUTHORIZED,"TOKEN_004", "지원하지 않는 토큰입니다."),
+    TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN_005","인증 토큰이 존재하지 않습니다."),
     // ── Common ──────────────────────────────────────────────
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "COMMON_001", "입력값이 올바르지 않습니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_002", "서버 내부 오류가 발생했습니다."),
 
     // ── Member ──────────────────────────────────────────────
     CONFLICT_EMAIL(HttpStatus.CONFLICT, "MEMBER_001", "이미 존재하는 이메일 입니다."),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_002", "존재하지 않는 회원입니다"),
+    EMAIL_MISMATCH(HttpStatus.BAD_REQUEST, "AUTH_001", "이메일이 일치하지 않습니다."),
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "AUTH_002", "비밀번호가 일치하지 않습니다."),
 
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001", "주문을 찾을 수 없습니다."),
