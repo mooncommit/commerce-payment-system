@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
+    Optional<Payment> findByIdAndOrder_Member_Id(Long paymentId, Long memberId);
+
     Optional<Payment> findByOrder_IdAndPortonePaymentId(Long orderId, String portonePaymentId);
 
     // 주문 단건 조회 화면에서 결제 ID 한 건만 필요하므로 Payment 엔티티 전체를 로딩하지 않고 ID만 프로젝션

@@ -28,28 +28,27 @@ public class Payment extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
-    @Column(nullable = false)
-    private Long memberId;
+    // PortOne 결제 조회/취소/환불 요청에 사용하는 외부 결제 식별자
+    @Column(name = "portone_payment_id", nullable = false, unique = true, length = 200)
+    private String portonePaymentId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PaymentStatus status = PaymentStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private PaymentMethodType paymentMethodType;
 
+    // 주문 금액 스냅샷. 주문 금액이 바뀌어도 결제 당시 검증 기준은 유지한다.
+    @Column(nullable = false)
     private Long totalOrderAmount;
 
+    @Column(nullable = false)
     private Long usedPointAmount;
 
+    @Column(nullable = false)
     private Long pgAmount;
-
-    private Long earnedPointAmount;
-
-    @Column(name = "portone_payment_id", nullable = false, unique = true, length = 200)
-    private String portonePaymentId;
-
-    private String portoneTransactionId;
 
     private LocalDateTime paidAt;
 
@@ -64,21 +63,17 @@ public class Payment extends BaseEntity {
     public static Payment createPending(Order order, PaymentMethodType paymentMethodType) {
         Payment payment = new Payment();
         payment.order = order;
-        payment.memberId = order.getMember().getId();
         payment.status = PaymentStatus.PENDING;
         payment.paymentMethodType = paymentMethodType;
         payment.totalOrderAmount = order.getTotalAmount();
         payment.usedPointAmount = order.getUsedPointAmount();
         payment.pgAmount = order.getPgAmount();
-        payment.earnedPointAmount = 0L;
         payment.portonePaymentId = generatePortonePaymentId();
         return payment;
     }
 
-    public void markPaid(String portoneTransactionId, Long earnedPointAmount) {
+    public void markPaid() {
         changeStatus(PaymentStatus.COMPLETED);
-        this.portoneTransactionId = portoneTransactionId;
-        this.earnedPointAmount = earnedPointAmount;
         this.paidAt = LocalDateTime.now();
     }
 

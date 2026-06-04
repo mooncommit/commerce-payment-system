@@ -29,15 +29,24 @@ class PaymentTest {
         Payment payment = Payment.createPending(order, PaymentMethodType.CARD);
 
         assertEquals(order, payment.getOrder());
-        assertEquals(1L, payment.getMemberId());
         assertEquals(PaymentStatus.PENDING, payment.getStatus());
         assertEquals(PaymentMethodType.CARD, payment.getPaymentMethodType());
         assertEquals(50_000L, payment.getTotalOrderAmount());
         assertEquals(10_000L, payment.getUsedPointAmount());
         assertEquals(40_000L, payment.getPgAmount());
-        assertEquals(0L, payment.getEarnedPointAmount());
         assertNotNull(payment.getPortonePaymentId());
         assertTrue(payment.getPortonePaymentId().startsWith("pay_"));
+    }
+
+    @Test
+    void markPaidChangesPendingPaymentToCompleted() {
+        Payment payment = newEntity(Payment.class);
+        setField(payment, "status", PaymentStatus.PENDING);
+
+        payment.markPaid();
+
+        assertEquals(PaymentStatus.COMPLETED, payment.getStatus());
+        assertNotNull(payment.getPaidAt());
     }
 
     @Test

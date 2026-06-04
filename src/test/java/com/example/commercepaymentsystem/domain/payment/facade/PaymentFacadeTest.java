@@ -38,14 +38,14 @@ class PaymentFacadeTest {
 
         when(paymentService.confirmPayment(loginMember.getMemberId(), request)).thenReturn(readyPayment);
         when(paymentGateway.getPayment("pay_test")).thenReturn(new PaymentGatewayResponse("pg_tx_1", "PAID", 40_000));
-        when(paymentService.approvePayment(loginMember.getMemberId(), request, "pg_tx_1", 0L)).thenReturn(expected);
+        when(paymentService.approvePayment(loginMember.getMemberId(), request)).thenReturn(expected);
 
         PaymentConfirmResponse actual = paymentFacade.confirmPayment(loginMember, request);
 
         assertSame(expected, actual);
         verify(paymentService).confirmPayment(loginMember.getMemberId(), request);
         verify(paymentGateway).getPayment("pay_test");
-        verify(paymentService).approvePayment(loginMember.getMemberId(), request, "pg_tx_1", 0L);
+        verify(paymentService).approvePayment(loginMember.getMemberId(), request);
     }
 
     @Test

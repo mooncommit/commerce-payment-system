@@ -44,15 +44,14 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentConfirmResponse approvePayment(Long memberId, PaymentConfirmRequest request,
-                                                 String portoneTransactionId, Long earnedPointAmount) {
+    public PaymentConfirmResponse approvePayment(Long memberId, PaymentConfirmRequest request) {
         Payment payment = getReadyPayment(memberId, request);
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
 
-        payment.markPaid(portoneTransactionId, earnedPointAmount);
+        payment.markPaid();
         payment.getOrder().markAsConfirmed();
 
         return toConfirmResponse(payment);
@@ -71,13 +70,9 @@ public class PaymentService {
     }
 
     private Payment getReadyPayment(Long memberId, PaymentConfirmRequest request) {
-        // 서버에 저장된 결제 ID 기준으로 결제 정보 조회
-        Payment payment = paymentRepository.findById(request.getPaymentId())
+        // 서버에 저장된 결제 ID와 주문 소유자 기준으로 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndOrder_Member_Id(request.getPaymentId(), memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
-
-        if (!Objects.equals(payment.getMemberId(), memberId)) {
-            throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
-        }
 
         if (!Objects.equals(payment.getPortonePaymentId(), request.getPortonePaymentId())) {
             throw new BusinessException(ErrorCode.PAYMENT_ID_MISMATCH);

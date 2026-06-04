@@ -34,7 +34,6 @@ class PaymentServiceTest {
         setField(order, "pgAmount", 40_000L);
         Payment payment = newEntity(Payment.class);
         setField(payment, "id", 1L);
-        setField(payment, "memberId", 10L);
         setField(payment, "order", order);
         setField(payment, "status", PaymentStatus.PENDING);
         setField(payment, "portonePaymentId", "pay_test");
@@ -45,9 +44,9 @@ class PaymentServiceTest {
         setField(request, "paymentId", 1L);
         setField(request, "portonePaymentId", "pay_test");
 
-        when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+        when(paymentRepository.findByIdAndOrder_Member_Id(1L, 10L)).thenReturn(Optional.of(payment));
 
-        paymentService.approvePayment(10L, request, "pg_tx_1", 0L);
+        paymentService.approvePayment(10L, request);
 
         assertEquals(PaymentStatus.COMPLETED, payment.getStatus());
         assertEquals(OrderStatus.COMPLETED, order.getOrderStatus());
@@ -62,7 +61,6 @@ class PaymentServiceTest {
         setField(order, "orderStatus", OrderStatus.PAYMENT_PENDING);
         Payment payment = newEntity(Payment.class);
         setField(payment, "id", 1L);
-        setField(payment, "memberId", 10L);
         setField(payment, "order", order);
         setField(payment, "status", PaymentStatus.PENDING);
         setField(payment, "portonePaymentId", "pay_test");
@@ -70,7 +68,7 @@ class PaymentServiceTest {
         setField(request, "paymentId", 1L);
         setField(request, "portonePaymentId", "pay_test");
 
-        when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+        when(paymentRepository.findByIdAndOrder_Member_Id(1L, 10L)).thenReturn(Optional.of(payment));
 
         paymentService.failPayment(10L, request, "PG 결제가 완료되지 않았습니다.");
 
@@ -82,14 +80,11 @@ class PaymentServiceTest {
     void confirmPaymentRejectsPaymentOwnedByAnotherMember() {
         PaymentRepository paymentRepository = mock(PaymentRepository.class);
         PaymentService paymentService = new PaymentService(paymentRepository);
-        Payment payment = newEntity(Payment.class);
-        setField(payment, "id", 1L);
-        setField(payment, "memberId", 10L);
         PaymentConfirmRequest request = newEntity(PaymentConfirmRequest.class);
         setField(request, "paymentId", 1L);
         setField(request, "portonePaymentId", "pay_test");
 
-        when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+        when(paymentRepository.findByIdAndOrder_Member_Id(1L, 20L)).thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(
                 BusinessException.class,

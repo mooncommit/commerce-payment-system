@@ -52,6 +52,6 @@ public class PaymentFacade {
             throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
 
-        return paymentService.approvePayment(memberId, request, pgPayment.id(), 0L);
+        return paymentService.approvePayment(memberId, request);
     }
 }
