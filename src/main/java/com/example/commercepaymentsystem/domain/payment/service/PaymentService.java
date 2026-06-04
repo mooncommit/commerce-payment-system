@@ -6,10 +6,13 @@ import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
+import com.example.commercepaymentsystem.domain.payment.event.PaymentApprovedEvent;
+import com.example.commercepaymentsystem.domain.payment.event.PaymentFailedEvent;
 import com.example.commercepaymentsystem.domain.payment.repository.PaymentRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,7 @@ import java.util.Objects;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Payment createPendingPayment(Order order, PaymentMethodType paymentMethodType) {
@@ -54,6 +58,14 @@ public class PaymentService {
         payment.markPaid();
         payment.getOrder().markAsConfirmed();
 
+        // 결제 완료(성공) 이벤트 발행: 타 도메인(포인트 적립/사용, 장바구니 초기화)에서 구독
+        eventPublisher.publishEvent(new PaymentApprovedEvent(
+                memberId,
+                payment.getOrder().getId(),
+                payment.getPgAmount(),
+                payment.getUsedPointAmount()
+        ));
+
         return toConfirmResponse(payment);
     }
 
@@ -67,6 +79,9 @@ public class PaymentService {
 
         payment.markFailed(failureReason);
         payment.getOrder().markAsCancelled();
+
+        // 결제 실패 이벤트 발행: 타 도메인(재고 복구 등)에서 구독
+        eventPublisher.publishEvent(new PaymentFailedEvent(payment.getOrder().getId()));
     }
 
     private Payment getReadyPayment(Long memberId, PaymentConfirmRequest request) {
