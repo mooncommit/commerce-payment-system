@@ -1,11 +1,15 @@
 package com.example.commercepaymentsystem.domain.refund.entity;
 
+import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.refund.enums.RefundStatus;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "refunds")
@@ -17,23 +21,10 @@ public class Refund extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long paymentId;
-
-    @Column(nullable = false)
-    private Long orderId;
-
-    @Column(nullable = false)
-    private Long memberId;
-
-    @Column(nullable = false)
-    private Long refundTotalAmount;
-
-    @Column(nullable = false)
-    private Long refundPointAmount;
-
-    @Column(nullable = false)
-    private Long refundPgAmount;
+    // 전체 환불만 지원하므로 결제(Payment) 1개당 환불(Refund) 1개만 매핑됩니다 (@OneToOne)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id", nullable = false, unique = true)
+    private Payment payment;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -41,4 +32,25 @@ public class Refund extends BaseEntity {
 
     @Column(length = 255)
     private String reason;
+
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
+
+    @Builder
+    public Refund(Payment payment, String reason) {
+        this.payment = payment;
+        this.refundStatus = RefundStatus.REQUESTED;
+        this.reason = reason;
+    }
+
+    // 환불 완료 처리 메서드
+    public void markAsCompleted() {
+        this.refundStatus = RefundStatus.COMPLETED;
+        this.refundedAt = LocalDateTime.now();
+    }
+
+    // 환불 실패 처리 메서드
+    public void markAsFailed() {
+        this.refundStatus = RefundStatus.FAILED;
+    }
 }
