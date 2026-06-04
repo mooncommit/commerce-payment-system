@@ -88,8 +88,8 @@ public class Payment extends BaseEntity {
         this.failedAt = LocalDateTime.now();
     }
 
-    public void markCancelled() {
-        changeStatus(PaymentStatus.CANCELLED);
+    public void markCanceled() {
+        changeStatus(PaymentStatus.CANCELED);
     }
 
     // 결제 상태 변경 로직

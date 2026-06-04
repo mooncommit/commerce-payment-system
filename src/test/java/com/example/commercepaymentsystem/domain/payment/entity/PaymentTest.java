@@ -40,6 +40,16 @@ class PaymentTest {
         assertTrue(payment.getPortonePaymentId().startsWith("pay_"));
     }
 
+    @Test
+    void markCanceledChangesPaidPaymentToCanceled() {
+        Payment payment = newEntity(Payment.class);
+        setField(payment, "status", PaymentStatus.PAID);
+
+        payment.markCanceled();
+
+        assertEquals(PaymentStatus.CANCELED, payment.getStatus());
+    }
+
     private static <T> T newEntity(Class<T> entityType) {
         try {
             Constructor<T> constructor = entityType.getDeclaredConstructor();

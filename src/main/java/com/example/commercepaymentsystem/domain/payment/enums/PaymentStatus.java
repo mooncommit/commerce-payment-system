@@ -4,10 +4,10 @@ package com.example.commercepaymentsystem.domain.payment.enums;
  * 결제 상태 머신
  * - READY → PAID     : 결제 성공
  * - READY → FAILED   : 결제 미완료 (PG 실패, 금액 불일치 등)
- * - PAID  → CANCELLED: 성공한 결제의 사후 취소 (환불)
+ * - PAID  → CANCELED : 성공한 결제의 사후 취소 (환불)
  *
  * - FAILED  = 결제가 성공적으로 완료되지 못한 모든 경우
- * - CANCELLED = 성공한 결제를 사후에 취소한 경우
+ * - CANCELED = 성공한 결제를 사후에 취소한 경우
  */
 public enum PaymentStatus {
     // 결제 생성
@@ -21,7 +21,7 @@ public enum PaymentStatus {
     PAID {
         @Override
         public boolean canTransitTo(PaymentStatus target) {
-            return target == CANCELLED;
+            return target == CANCELED;
         }
     },
     // 결제 실패
@@ -32,7 +32,7 @@ public enum PaymentStatus {
         }
     },
     // 환불 완료
-    CANCELLED {
+    CANCELED {
         @Override
         public boolean canTransitTo(PaymentStatus target) {
             return false;
