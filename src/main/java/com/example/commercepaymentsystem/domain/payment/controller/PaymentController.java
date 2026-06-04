@@ -4,6 +4,7 @@ import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmReques
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmResponse;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
 import com.example.commercepaymentsystem.global.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,7 @@ public class PaymentController {
 
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse<PaymentConfirmResponse>> confirmPayment(
-            @RequestBody PaymentConfirmRequest request
+            @Valid @RequestBody PaymentConfirmRequest request
     ) {
         PaymentConfirmResponse response = paymentService.confirmPayment(request);
 
