@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### macOS 메타 파일 ###
+.DS_Store
