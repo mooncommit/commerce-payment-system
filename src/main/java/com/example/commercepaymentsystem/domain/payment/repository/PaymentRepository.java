@@ -14,6 +14,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrder_IdAndPortonePaymentId(Long orderId, String portonePaymentId);
 
+    @Query("SELECT p FROM Payment p JOIN FETCH p.order o WHERE p.id = :paymentId")
+    Optional<Payment> findByIdWithOrder(@Param("paymentId") Long paymentId);
+
+    @Query("SELECT p FROM Payment p JOIN FETCH p.order o WHERE p.order.id = :orderId")
+    Optional<Payment> findByOrderIdWithOrder(@Param("orderId") Long orderId);
+
     // 주문 단건 조회 화면에서 결제 ID 한 건만 필요하므로 Payment 엔티티 전체를 로딩하지 않고 ID만 프로젝션
     // Order ← Payment가 단방향 관계(Order가 Payment를 참조하지 않음)라서,
     // 주문에 결제 ID를 붙이려면 이렇게 Payment 쪽에서 역으로 찾아야 한다.

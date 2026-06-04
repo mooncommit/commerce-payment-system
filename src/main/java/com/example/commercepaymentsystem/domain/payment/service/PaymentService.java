@@ -6,13 +6,10 @@ import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
-import com.example.commercepaymentsystem.domain.payment.event.PaymentApprovedEvent;
-import com.example.commercepaymentsystem.domain.payment.event.PaymentFailedEvent;
 import com.example.commercepaymentsystem.domain.payment.repository.PaymentRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,68 +21,50 @@ import java.util.Objects;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * 결제 대기 상태의 결제를 생성한다.
+     *
+     * @param order 결제가 연결될 주문
+     * @param paymentMethodType 결제 수단
+     * @return 저장된 결제 엔티티
+     */
     @Transactional
     public Payment createPendingPayment(Order order, PaymentMethodType paymentMethodType) {
         Payment payment = Payment.createPending(order, paymentMethodType);
-
         return paymentRepository.save(payment);
     }
 
-    // 결제 확정 요청 기본 검증
+    /**
+     * 결제 확정 요청에 대한 기본 검증을 수행하고 응답을 반환한다.
+     *
+     * <p>이 단계에서는 PG 검증 전이므로 결제 상태를 바꾸지 않고,
+     * 서버에 저장된 결제 정보만 응답으로 내려준다.
+     *
+     * @param memberId 요청한 회원 ID
+     * @param request 결제 확정 요청 정보
+     * @return 결제 확정 응답
+     */
     @Transactional
     public PaymentConfirmResponse confirmPayment(Long memberId, PaymentConfirmRequest request) {
-        Payment payment = getReadyPayment(memberId, request);
-
-        // 이미 처리된 결제는 다시 확정할 수 없도록 차단
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
-        }
-
-        // 아직 PortOne 검증 전이므로 서버에 저장된 결제 정보만 응답에 담아 반환
-        return toConfirmResponse(payment);
-    }
-
-    @Transactional
-    public PaymentConfirmResponse approvePayment(Long memberId, PaymentConfirmRequest request) {
-        Payment payment = getReadyPayment(memberId, request);
+        Payment payment = findReadyPayment(memberId, request);
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
-
-        payment.markPaid();
-        payment.getOrder().markAsConfirmed();
-
-        // 결제 완료(성공) 이벤트 발행: 타 도메인(포인트 적립/사용, 장바구니 초기화)에서 구독
-        eventPublisher.publishEvent(new PaymentApprovedEvent(
-                memberId,
-                payment.getOrder().getId(),
-                payment.getPgAmount(),
-                payment.getUsedPointAmount()
-        ));
 
         return toConfirmResponse(payment);
     }
 
+    /**
+     * 결제 확정에 필요한 결제 엔티티를 조회하고 요청값을 검증한다.
+     *
+     * @param memberId 요청한 회원 ID
+     * @param request 결제 요청 정보
+     * @return 검증을 통과한 결제 엔티티
+     */
     @Transactional
-    public void failPayment(Long memberId, PaymentConfirmRequest request, String failureReason) {
-        Payment payment = getReadyPayment(memberId, request);
-
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
-        }
-
-        payment.markFailed(failureReason);
-        payment.getOrder().markAsCancelled();
-
-        // 결제 실패 이벤트 발행: 타 도메인(재고 복구 등)에서 구독
-        eventPublisher.publishEvent(new PaymentFailedEvent(payment.getOrder().getId()));
-    }
-
-    private Payment getReadyPayment(Long memberId, PaymentConfirmRequest request) {
-        // 서버에 저장된 결제 ID와 주문 소유자 기준으로 결제 정보 조회
+    public Payment findReadyPayment(Long memberId, PaymentConfirmRequest request) {
         Payment payment = paymentRepository.findByIdAndOrder_Member_Id(request.getPaymentId(), memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
@@ -96,14 +75,55 @@ public class PaymentService {
         return payment;
     }
 
-    private PaymentConfirmResponse toConfirmResponse(Payment payment) {
+    /**
+     * 결제 상태를 완료로 변경한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     */
+    @Transactional
+    public void markPaid(Payment payment) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
+        }
+        payment.markPaid();
+    }
+
+    /**
+     * 결제 상태를 실패로 변경한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     * @param failureReason 실패 사유
+     */
+    @Transactional
+    public void markFailed(Payment payment, String failureReason) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
+        }
+        payment.markFailed(failureReason);
+    }
+
+    /**
+     * 결제 상태를 취소로 변경한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     */
+    public void cancelPayment(Payment payment) {
+        payment.markCanceled();
+    }
+
+    /**
+     * 결제 확정 응답 DTO를 생성한다.
+     *
+     * @param payment 응답으로 변환할 결제
+     * @return 결제 확정 응답
+     */
+    public PaymentConfirmResponse toConfirmResponse(Payment payment) {
         Order order = payment.getOrder();
 
         return PaymentConfirmResponse.builder()
                 .paymentId(payment.getId())
                 .orderId(order.getId())
                 .orderNumber(order.getOrderNumber())
-                .portonePaymentId(payment.getPortonePaymentId())
                 .paymentStatus(payment.getStatus())
                 .orderStatus(order.getOrderStatus())
                 .totalAmount(payment.getTotalOrderAmount())

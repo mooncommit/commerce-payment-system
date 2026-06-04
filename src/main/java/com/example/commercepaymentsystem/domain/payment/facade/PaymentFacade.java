@@ -5,6 +5,7 @@ import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmReques
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmResponse;
 import com.example.commercepaymentsystem.domain.payment.port.PaymentGateway;
 import com.example.commercepaymentsystem.domain.payment.port.PaymentGatewayResponse;
+import com.example.commercepaymentsystem.domain.payment.service.PaymentCommandService;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
@@ -28,19 +29,20 @@ public class PaymentFacade {
     private static final String PG_STATUS_PAID = "PAID";
 
     private final PaymentService paymentService;
+    private final PaymentCommandService paymentCommandService;
     private final PaymentGateway paymentGateway;
 
     public PaymentConfirmResponse confirmPayment(LoginMember loginMember, PaymentConfirmRequest request) {
         Long memberId = loginMember.getMemberId();
         PaymentConfirmResponse readyPayment = paymentService.confirmPayment(memberId, request);
-        String portonePaymentId = readyPayment.getPortonePaymentId();
+        String portonePaymentId = request.getPortonePaymentId();
 
         PaymentGatewayResponse pgPayment = paymentGateway.getPayment(portonePaymentId);
 
         if (!PG_STATUS_PAID.equals(pgPayment.status())) {
             log.warn("결제 확정 실패 - PG 결제 미완료: paymentId={}, pgStatus={}",
                     readyPayment.getPaymentId(), pgPayment.status());
-            paymentService.failPayment(memberId, request, "PG 결제가 완료되지 않았습니다.");
+            paymentCommandService.failPaymentAndOrder(memberId, request, "PG 결제가 완료되지 않았습니다.");
             throw new BusinessException(ErrorCode.PAYMENT_NOT_PAID);
         }
 
@@ -53,10 +55,10 @@ public class PaymentFacade {
                 log.error("PG 자동 취소 실패: portonePaymentId={}", portonePaymentId, e);
                 throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
             }
-            paymentService.failPayment(memberId, request, "결제 금액이 일치하지 않습니다.");
+            paymentCommandService.failPaymentAndOrder(memberId, request, "결제 금액이 일치하지 않습니다.");
             throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
 
-        return paymentService.approvePayment(memberId, request);
+        return paymentCommandService.approvePaymentAndOrder(memberId, request);
     }
 }

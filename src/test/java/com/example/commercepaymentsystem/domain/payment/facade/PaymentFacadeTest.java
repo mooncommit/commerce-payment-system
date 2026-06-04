@@ -5,6 +5,7 @@ import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmReques
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmResponse;
 import com.example.commercepaymentsystem.domain.payment.port.PaymentGateway;
 import com.example.commercepaymentsystem.domain.payment.port.PaymentGatewayResponse;
+import com.example.commercepaymentsystem.domain.payment.service.PaymentCommandService;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
@@ -24,12 +25,13 @@ class PaymentFacadeTest {
     @Test
     void confirmPaymentApprovesPaymentWhenPgPaymentIsPaidAndAmountMatches() {
         PaymentService paymentService = mock(PaymentService.class);
+        PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentGateway);
+        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentCommandService, paymentGateway);
         PaymentConfirmRequest request = new PaymentConfirmRequest();
+        setField(request, "portonePaymentId", "pay_test");
         PaymentConfirmResponse readyPayment = PaymentConfirmResponse.builder()
                 .paymentId(1L)
-                .portonePaymentId("pay_test")
                 .pgAmount(40_000L)
                 .build();
         PaymentConfirmResponse expected = PaymentConfirmResponse.builder()
@@ -40,26 +42,27 @@ class PaymentFacadeTest {
 
         when(paymentService.confirmPayment(loginMember.getMemberId(), request)).thenReturn(readyPayment);
         when(paymentGateway.getPayment("pay_test")).thenReturn(new PaymentGatewayResponse("pg_tx_1", "PAID", 40_000));
-        when(paymentService.approvePayment(loginMember.getMemberId(), request)).thenReturn(expected);
+        when(paymentCommandService.approvePaymentAndOrder(loginMember.getMemberId(), request)).thenReturn(expected);
 
         PaymentConfirmResponse actual = paymentFacade.confirmPayment(loginMember, request);
 
         assertSame(expected, actual);
         verify(paymentService).confirmPayment(loginMember.getMemberId(), request);
         verify(paymentGateway).getPayment("pay_test");
-        verify(paymentService).approvePayment(loginMember.getMemberId(), request);
+        verify(paymentCommandService).approvePaymentAndOrder(loginMember.getMemberId(), request);
     }
 
     @Test
     void confirmPaymentFailsPaymentWhenPgPaymentIsNotPaid() {
         PaymentService paymentService = mock(PaymentService.class);
+        PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentGateway);
+        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentCommandService, paymentGateway);
         PaymentConfirmRequest request = new PaymentConfirmRequest();
+        setField(request, "portonePaymentId", "pay_test");
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
         PaymentConfirmResponse readyPayment = PaymentConfirmResponse.builder()
                 .paymentId(1L)
-                .portonePaymentId("pay_test")
                 .pgAmount(40_000L)
                 .build();
 
@@ -72,19 +75,20 @@ class PaymentFacadeTest {
         );
 
         assertEquals(ErrorCode.PAYMENT_NOT_PAID, exception.getErrorCode());
-        verify(paymentService).failPayment(loginMember.getMemberId(), request, "PG 결제가 완료되지 않았습니다.");
+        verify(paymentCommandService).failPaymentAndOrder(loginMember.getMemberId(), request, "PG 결제가 완료되지 않았습니다.");
     }
 
     @Test
     void confirmPaymentCancelsPgPaymentAndFailsPaymentWhenAmountMismatches() {
         PaymentService paymentService = mock(PaymentService.class);
+        PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentGateway);
+        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentCommandService, paymentGateway);
         PaymentConfirmRequest request = new PaymentConfirmRequest();
+        setField(request, "portonePaymentId", "pay_test");
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
         PaymentConfirmResponse readyPayment = PaymentConfirmResponse.builder()
                 .paymentId(1L)
-                .portonePaymentId("pay_test")
                 .pgAmount(40_000L)
                 .build();
 
@@ -98,19 +102,20 @@ class PaymentFacadeTest {
 
         assertEquals(ErrorCode.PAYMENT_AMOUNT_MISMATCH, exception.getErrorCode());
         verify(paymentGateway).cancelPayment("pay_test", "결제 금액 불일치 자동 취소");
-        verify(paymentService).failPayment(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
+        verify(paymentCommandService).failPaymentAndOrder(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
     }
 
     @Test
     void confirmPaymentThrowsPgCancelFailedWhenAmountMismatchCancelFails() {
         PaymentService paymentService = mock(PaymentService.class);
+        PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentGateway);
+        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentCommandService, paymentGateway);
         PaymentConfirmRequest request = new PaymentConfirmRequest();
+        setField(request, "portonePaymentId", "pay_test");
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
         PaymentConfirmResponse readyPayment = PaymentConfirmResponse.builder()
                 .paymentId(1L)
-                .portonePaymentId("pay_test")
                 .pgAmount(40_000L)
                 .build();
 
@@ -127,6 +132,16 @@ class PaymentFacadeTest {
 
         assertEquals(ErrorCode.PG_CANCEL_FAILED, exception.getErrorCode());
         verify(paymentGateway).cancelPayment("pay_test", "결제 금액 불일치 자동 취소");
-        verify(paymentService, never()).failPayment(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
+        verify(paymentCommandService, never()).failPaymentAndOrder(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
+    }
+
+    private static void setField(Object target, String fieldName, Object value) {
+        try {
+            java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(target, value);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
