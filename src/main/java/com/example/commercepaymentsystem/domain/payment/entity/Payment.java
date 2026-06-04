@@ -61,6 +61,20 @@ public class Payment extends BaseEntity {
         return "pay_" + UUID.randomUUID();
     }
 
+    public static Payment createPending(Order order, PaymentMethodType paymentMethodType) {
+        Payment payment = new Payment();
+        payment.order = order;
+        payment.memberId = order.getMember().getId();
+        payment.status = PaymentStatus.READY;
+        payment.paymentMethodType = paymentMethodType;
+        payment.totalOrderAmount = order.getTotalAmount();
+        payment.usedPointAmount = order.getUsedPointAmount();
+        payment.pgAmount = order.getPgAmount();
+        payment.earnedPointAmount = 0L;
+        payment.portonePaymentId = generatePortonePaymentId();
+        return payment;
+    }
+
     public void markPaid(String portoneTransactionId, Long earnedPointAmount) {
         changeStatus(PaymentStatus.PAID);
         this.portoneTransactionId = portoneTransactionId;

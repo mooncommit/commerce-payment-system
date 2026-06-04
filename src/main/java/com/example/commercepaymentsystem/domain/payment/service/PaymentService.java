@@ -4,6 +4,7 @@ import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmReques
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmResponse;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
+import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.domain.payment.repository.PaymentRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
@@ -18,6 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+
+    @Transactional
+    public Payment createPendingPayment(Order order, PaymentMethodType paymentMethodType) {
+        Payment payment = Payment.createPending(order, paymentMethodType);
+
+        return paymentRepository.save(payment);
+    }
 
     // 결제 확정 요청 기본 검증
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest request) {
