@@ -98,14 +98,8 @@ public class AuthService {
         return new TokenResponse(newAccessToken);
     }
 
-//    @Transactional
-//    public void logout(Long memberId) {
-//
-//        RefreshToken refreshToken =
-//                refreshTokenRepository
-//                        .findByMemberId(memberId)
-//                        .orElseThrow(...);
-//
-//        refreshTokenRepository.delete(refreshToken);
-//    }
+    @Transactional
+    public void logout(Long memberId) {
+        refreshTokenRepository.deleteByMemberId(memberId);
+    }
 }
