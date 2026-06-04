@@ -36,6 +36,16 @@ public class Product extends BaseEntity {
     @Column(name = "sale_status", nullable = false, length = 30)
     private SaleStatus saleStatus;
 
+    public boolean isOnSale() {
+        return saleStatus == SaleStatus.ON_SALE;
+    }
 
+    public boolean hasStock(Integer quantity) {
+        return stockQuantity >= quantity;
+    }
 
+    // 주문/재고 도메인에서 주문 생성 시 재고를 먼저 줄일 때 사용
+    public void decreaseStock(Integer quantity) {
+        this.stockQuantity -= quantity;
+    }
 }

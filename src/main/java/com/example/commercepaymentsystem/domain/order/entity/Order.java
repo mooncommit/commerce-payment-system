@@ -48,6 +48,18 @@ public class Order extends BaseEntity {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 
+    public static Order createPending(String orderNumber, Member member, Long totalAmount, Long usedPointAmount, Long pgAmount) {
+        // 주문 생성 직후에는 결제 대기 상태로 저장
+        Order order = new Order();
+        order.orderNumber = orderNumber;
+        order.member = member;
+        order.orderStatus = OrderStatus.PAYMENT_PENDING;
+        order.totalAmount = totalAmount;
+        order.usedPointAmount = usedPointAmount;
+        order.pgAmount = pgAmount;
+        return order;
+    }
+
     public void markAsConfirmed() {
         changeStatus(OrderStatus.COMPLETED);
         this.paidAt = LocalDateTime.now();
@@ -58,7 +70,6 @@ public class Order extends BaseEntity {
         this.canceledAt = LocalDateTime.now();
     }
 
-    // 주문 상태 변경 로직
     private void changeStatus(OrderStatus newStatus) {
         if (!this.orderStatus.canTransitTo(newStatus)) {
             throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS);
