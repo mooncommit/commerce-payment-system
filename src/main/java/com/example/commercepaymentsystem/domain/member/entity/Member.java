@@ -1,5 +1,6 @@
 package com.example.commercepaymentsystem.domain.member.entity;
 
+import com.example.commercepaymentsystem.domain.member.enums.MemberShip;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -30,4 +31,16 @@ public class Member extends BaseEntity {
 
     @Column(nullable = false)
     private Long pointBalance = 0L;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MemberShip memberShip;
+
+    public Member(String email, String passwordHash, String name, String phoneNumber) {
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.memberShip = MemberShip.NORMAL;
+    }
 }
