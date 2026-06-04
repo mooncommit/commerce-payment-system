@@ -1,5 +1,6 @@
 package com.example.commercepaymentsystem.domain.payment.facade;
 
+import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmRequest;
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmResponse;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
@@ -17,7 +18,7 @@ public class PaymentFacade {
 
     private final PaymentService paymentService;
 
-    public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest request) {
-        return paymentService.confirmPayment(request);
+    public PaymentConfirmResponse confirmPayment(LoginMember loginMember, PaymentConfirmRequest request) {
+        return paymentService.confirmPayment(loginMember.getMemberId(), request);
     }
 }

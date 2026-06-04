@@ -31,12 +31,16 @@ public class PaymentService {
 
     // 결제 확정 요청 기본 검증
     @Transactional
-    public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest request) {
+    public PaymentConfirmResponse confirmPayment(Long memberId, PaymentConfirmRequest request) {
         // 서버에 저장된 결제 ID 기준으로 결제 정보 조회
         Payment payment = paymentRepository.findById(request.getPaymentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
-        Order order = payment.getOrder();
 
+        if (!Objects.equals(payment.getMemberId(), memberId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+        }
+
+        Order order = payment.getOrder();
         if (!Objects.equals(payment.getPortonePaymentId(), request.getPortonePaymentId())) {
             throw new BusinessException(ErrorCode.PAYMENT_ID_MISMATCH);
         }

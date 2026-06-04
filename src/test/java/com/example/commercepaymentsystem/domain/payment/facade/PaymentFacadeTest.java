@@ -1,5 +1,6 @@
 package com.example.commercepaymentsystem.domain.payment.facade;
 
+import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmRequest;
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmResponse;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
@@ -20,12 +21,13 @@ class PaymentFacadeTest {
         PaymentConfirmResponse expected = PaymentConfirmResponse.builder()
                 .paymentId(1L)
                 .build();
+        LoginMember loginMember = new LoginMember(10L, "member@example.com");
 
-        when(paymentService.confirmPayment(request)).thenReturn(expected);
+        when(paymentService.confirmPayment(loginMember.getMemberId(), request)).thenReturn(expected);
 
-        PaymentConfirmResponse actual = paymentFacade.confirmPayment(request);
+        PaymentConfirmResponse actual = paymentFacade.confirmPayment(loginMember, request);
 
         assertSame(expected, actual);
-        verify(paymentService).confirmPayment(request);
+        verify(paymentService).confirmPayment(loginMember.getMemberId(), request);
     }
 }
