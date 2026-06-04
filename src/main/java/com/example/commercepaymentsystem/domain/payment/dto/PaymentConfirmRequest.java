@@ -1,13 +1,17 @@
 package com.example.commercepaymentsystem.domain.payment.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotNull;
 
 @Getter
 @NoArgsConstructor
 public class PaymentConfirmRequest {
 
-    private Long paymentId;
+    @NotNull(message = "주문 ID는 필수입니다")
+    Long orderId;
 
-    private String portonePaymentId;
+    @NotBlank(message = "PortOne 결제 ID는 필수입니다")
+    String portonePaymentId;
 }
