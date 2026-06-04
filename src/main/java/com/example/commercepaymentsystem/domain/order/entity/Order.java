@@ -3,6 +3,8 @@ package com.example.commercepaymentsystem.domain.order.entity;
 import com.example.commercepaymentsystem.domain.member.entity.Member;
 import com.example.commercepaymentsystem.domain.order.enums.OrderStatus;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
+import com.example.commercepaymentsystem.global.exception.BusinessException;
+import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -45,4 +47,20 @@ public class Order extends BaseEntity {
 
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
+
+    public void markAsConfirmed() {
+        changeStatus(OrderStatus.COMPLETED);
+    }
+
+    public void markAsCancelled() {
+        changeStatus(OrderStatus.CANCELED);
+    }
+
+    // 주문 상태 변경 로직
+    private void changeStatus(OrderStatus newStatus) {
+        if (!this.orderStatus.canTransitTo(newStatus)) {
+            throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+        this.orderStatus = newStatus;
+    }
 }
