@@ -18,6 +18,10 @@ public enum ErrorCode implements BaseCode {
     // ── Member ──────────────────────────────────────────────
     CONFLICT_EMAIL(HttpStatus.CONFLICT, "MEMBER_001", "이미 존재하는 이메일 입니다."),
 
+    // Order
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001", "주문을 찾을 수 없습니다."),
+    INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "ORDER_002", "유효하지 않은 주문 상태 변경입니다."),
+
     // ── Payment ─────────────────────────────────────────────
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,          "PAYMENT_001", "결제 정보를 찾을 수 없습니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST,  "PAYMENT_002", "결제 금액이 일치하지 않습니다."),
