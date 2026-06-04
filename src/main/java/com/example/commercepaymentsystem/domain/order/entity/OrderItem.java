@@ -36,4 +36,16 @@ public class OrderItem extends BaseEntity {
 
     @Column(nullable = false)
     private Long lineTotalAmount;
+
+    public static OrderItem create(Order order, Product product, Integer quantity) {
+        // 상품 정보가 나중에 바뀌어도 주문 당시 상품명과 가격 유지
+        OrderItem orderItem = new OrderItem();
+        orderItem.order = order;
+        orderItem.product = product;
+        orderItem.productName = product.getName();
+        orderItem.unitPrice = product.getPrice();
+        orderItem.quantity = quantity;
+        orderItem.lineTotalAmount = product.getPrice() * quantity;
+        return orderItem;
+    }
 }
