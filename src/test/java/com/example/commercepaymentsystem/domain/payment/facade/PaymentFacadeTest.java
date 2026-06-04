@@ -32,7 +32,7 @@ class PaymentFacadeTest {
                 .build();
         PaymentConfirmResponse expected = PaymentConfirmResponse.builder()
                 .paymentId(1L)
-                .paymentStatus(com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus.PAID)
+                .paymentStatus(com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus.COMPLETED)
                 .build();
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
 

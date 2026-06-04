@@ -35,7 +35,7 @@ public class PaymentService {
         Payment payment = getReadyPayment(memberId, request);
 
         // 이미 처리된 결제는 다시 확정할 수 없도록 차단
-        if (payment.getStatus() != PaymentStatus.READY) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
 
@@ -48,7 +48,7 @@ public class PaymentService {
                                                  String portoneTransactionId, Long earnedPointAmount) {
         Payment payment = getReadyPayment(memberId, request);
 
-        if (payment.getStatus() != PaymentStatus.READY) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
 
@@ -62,7 +62,7 @@ public class PaymentService {
     public void failPayment(Long memberId, PaymentConfirmRequest request, String failureReason) {
         Payment payment = getReadyPayment(memberId, request);
 
-        if (payment.getStatus() != PaymentStatus.READY) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
 

@@ -36,7 +36,7 @@ class PaymentServiceTest {
         setField(payment, "id", 1L);
         setField(payment, "memberId", 10L);
         setField(payment, "order", order);
-        setField(payment, "status", PaymentStatus.READY);
+        setField(payment, "status", PaymentStatus.PENDING);
         setField(payment, "portonePaymentId", "pay_test");
         setField(payment, "totalOrderAmount", 50_000L);
         setField(payment, "usedPointAmount", 10_000L);
@@ -49,7 +49,7 @@ class PaymentServiceTest {
 
         paymentService.approvePayment(10L, request, "pg_tx_1", 0L);
 
-        assertEquals(PaymentStatus.PAID, payment.getStatus());
+        assertEquals(PaymentStatus.COMPLETED, payment.getStatus());
         assertEquals(OrderStatus.COMPLETED, order.getOrderStatus());
     }
 
@@ -64,7 +64,7 @@ class PaymentServiceTest {
         setField(payment, "id", 1L);
         setField(payment, "memberId", 10L);
         setField(payment, "order", order);
-        setField(payment, "status", PaymentStatus.READY);
+        setField(payment, "status", PaymentStatus.PENDING);
         setField(payment, "portonePaymentId", "pay_test");
         PaymentConfirmRequest request = newEntity(PaymentConfirmRequest.class);
         setField(request, "paymentId", 1L);

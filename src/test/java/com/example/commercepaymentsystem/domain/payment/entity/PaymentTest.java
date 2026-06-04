@@ -30,7 +30,7 @@ class PaymentTest {
 
         assertEquals(order, payment.getOrder());
         assertEquals(1L, payment.getMemberId());
-        assertEquals(PaymentStatus.READY, payment.getStatus());
+        assertEquals(PaymentStatus.PENDING, payment.getStatus());
         assertEquals(PaymentMethodType.CARD, payment.getPaymentMethodType());
         assertEquals(50_000L, payment.getTotalOrderAmount());
         assertEquals(10_000L, payment.getUsedPointAmount());
@@ -43,7 +43,7 @@ class PaymentTest {
     @Test
     void markCanceledChangesPaidPaymentToCanceled() {
         Payment payment = newEntity(Payment.class);
-        setField(payment, "status", PaymentStatus.PAID);
+        setField(payment, "status", PaymentStatus.COMPLETED);
 
         payment.markCanceled();
 

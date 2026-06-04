@@ -33,7 +33,7 @@ public class Payment extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private PaymentStatus status = PaymentStatus.READY;
+    private PaymentStatus status = PaymentStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
     private PaymentMethodType paymentMethodType;
@@ -65,7 +65,7 @@ public class Payment extends BaseEntity {
         Payment payment = new Payment();
         payment.order = order;
         payment.memberId = order.getMember().getId();
-        payment.status = PaymentStatus.READY;
+        payment.status = PaymentStatus.PENDING;
         payment.paymentMethodType = paymentMethodType;
         payment.totalOrderAmount = order.getTotalAmount();
         payment.usedPointAmount = order.getUsedPointAmount();
@@ -76,7 +76,7 @@ public class Payment extends BaseEntity {
     }
 
     public void markPaid(String portoneTransactionId, Long earnedPointAmount) {
-        changeStatus(PaymentStatus.PAID);
+        changeStatus(PaymentStatus.COMPLETED);
         this.portoneTransactionId = portoneTransactionId;
         this.earnedPointAmount = earnedPointAmount;
         this.paidAt = LocalDateTime.now();
@@ -90,6 +90,10 @@ public class Payment extends BaseEntity {
 
     public void markCanceled() {
         changeStatus(PaymentStatus.CANCELED);
+    }
+
+    public void markRefunded() {
+        changeStatus(PaymentStatus.REFUNDED);
     }
 
     // 결제 상태 변경 로직
