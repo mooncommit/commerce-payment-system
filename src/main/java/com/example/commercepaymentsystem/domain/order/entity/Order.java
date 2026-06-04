@@ -50,10 +50,12 @@ public class Order extends BaseEntity {
 
     public void markAsConfirmed() {
         changeStatus(OrderStatus.COMPLETED);
+        this.paidAt = LocalDateTime.now();
     }
 
     public void markAsCancelled() {
         changeStatus(OrderStatus.CANCELED);
+        this.canceledAt = LocalDateTime.now();
     }
 
     // 주문 상태 변경 로직
