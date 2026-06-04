@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,14 +30,16 @@ public class PaymentService {
     }
 
     // 결제 확정 요청 기본 검증
+    @Transactional
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest request) {
-        // 서버에 저장된 주문 ID와 PortOne 결제 식별자 기준으로 결제 정보 조회
-        Payment payment = paymentRepository.findByOrder_IdAndPortonePaymentId(
-                        request.getOrderId(),
-                        request.getPortonePaymentId()
-                )
+        // 서버에 저장된 결제 ID 기준으로 결제 정보 조회
+        Payment payment = paymentRepository.findById(request.getPaymentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
         Order order = payment.getOrder();
+
+        if (!Objects.equals(payment.getPortonePaymentId(), request.getPortonePaymentId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_ID_MISMATCH);
+        }
 
         // 이미 처리된 결제는 다시 확정할 수 없도록 차단
         if (payment.getStatus() != PaymentStatus.READY) {
