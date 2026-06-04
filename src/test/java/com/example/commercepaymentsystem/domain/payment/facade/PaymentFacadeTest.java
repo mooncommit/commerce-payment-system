@@ -14,8 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 class PaymentFacadeTest {
 
@@ -97,5 +99,34 @@ class PaymentFacadeTest {
         assertEquals(ErrorCode.PAYMENT_AMOUNT_MISMATCH, exception.getErrorCode());
         verify(paymentGateway).cancelPayment("pay_test", "결제 금액 불일치 자동 취소");
         verify(paymentService).failPayment(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
+    }
+
+    @Test
+    void confirmPaymentThrowsPgCancelFailedWhenAmountMismatchCancelFails() {
+        PaymentService paymentService = mock(PaymentService.class);
+        PaymentGateway paymentGateway = mock(PaymentGateway.class);
+        PaymentFacade paymentFacade = new PaymentFacade(paymentService, paymentGateway);
+        PaymentConfirmRequest request = new PaymentConfirmRequest();
+        LoginMember loginMember = new LoginMember(10L, "member@example.com");
+        PaymentConfirmResponse readyPayment = PaymentConfirmResponse.builder()
+                .paymentId(1L)
+                .portonePaymentId("pay_test")
+                .pgAmount(40_000L)
+                .build();
+
+        when(paymentService.confirmPayment(loginMember.getMemberId(), request)).thenReturn(readyPayment);
+        when(paymentGateway.getPayment("pay_test")).thenReturn(new PaymentGatewayResponse("pg_tx_1", "PAID", 39_000));
+        doThrow(new RuntimeException("cancel failed"))
+                .when(paymentGateway)
+                .cancelPayment("pay_test", "결제 금액 불일치 자동 취소");
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> paymentFacade.confirmPayment(loginMember, request)
+        );
+
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, exception.getErrorCode());
+        verify(paymentGateway).cancelPayment("pay_test", "결제 금액 불일치 자동 취소");
+        verify(paymentService, never()).failPayment(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
     }
 }

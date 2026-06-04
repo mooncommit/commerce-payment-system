@@ -47,7 +47,12 @@ public class PaymentFacade {
         if (!Objects.equals(readyPayment.getPgAmount(), pgPayment.totalAmount())) {
             log.error("결제 확정 실패 - 금액 불일치: paymentId={}, dbPgAmount={}, pgAmount={}",
                     readyPayment.getPaymentId(), readyPayment.getPgAmount(), pgPayment.totalAmount());
-            paymentGateway.cancelPayment(portonePaymentId, "결제 금액 불일치 자동 취소");
+            try {
+                paymentGateway.cancelPayment(portonePaymentId, "결제 금액 불일치 자동 취소");
+            } catch (Exception e) {
+                log.error("PG 자동 취소 실패: portonePaymentId={}", portonePaymentId, e);
+                throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+            }
             paymentService.failPayment(memberId, request, "결제 금액이 일치하지 않습니다.");
             throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
