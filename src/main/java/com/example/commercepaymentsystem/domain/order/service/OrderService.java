@@ -8,6 +8,7 @@ import com.example.commercepaymentsystem.domain.order.dto.CartOrderCreateRequest
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateRequest;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderItemResponse;
+import com.example.commercepaymentsystem.domain.order.dto.OrderListResponse;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.order.entity.OrderItem;
 import com.example.commercepaymentsystem.domain.order.repository.OrderItemRepository;
@@ -19,7 +20,12 @@ import com.example.commercepaymentsystem.domain.product.entity.Product;
 import com.example.commercepaymentsystem.domain.product.repository.ProductRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
+import com.example.commercepaymentsystem.global.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +60,28 @@ public class OrderService {
 
     public void cancelOrder(Order order) {
         order.markAsCancelled();
+    }
+
+    // 내 주문 내역 조회
+    public PageResponse<OrderListResponse> getOrders(Long memberId, int page, int size) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt")
+                .and(Sort.by(Sort.Direction.DESC, "id"));
+        Pageable pageable = PageRequest.of(page - 1, size, sort);
+
+        Page<Order> orderPage = orderRepository.findByMemberId(memberId, pageable);
+
+        List<OrderListResponse> content = orderPage.getContent()
+                .stream()
+                .map(this::toOrderListResponse)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                orderPage.getNumber() + 1,
+                orderPage.getSize(),
+                orderPage.getTotalElements(),
+                orderPage.getTotalPages()
+        );
     }
 
     // 상품 바로 주문 생성
@@ -242,6 +270,19 @@ public class OrderService {
                 orderItem.getUnitPrice(),
                 orderItem.getQuantity(),
                 orderItem.getLineTotalAmount()
+        );
+    }
+
+    private OrderListResponse toOrderListResponse(Order order) {
+        return new OrderListResponse(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getOrderStatus(),
+                order.getTotalAmount(),
+                order.getUsedPointAmount(),
+                order.getPgAmount(),
+                order.getEarnedPointAmount(),
+                order.getCreatedAt()
         );
     }
 
