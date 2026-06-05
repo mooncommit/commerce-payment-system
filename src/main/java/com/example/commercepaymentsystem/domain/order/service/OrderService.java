@@ -7,6 +7,7 @@ import com.example.commercepaymentsystem.domain.order.dto.OrderCreateResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderItemResponse;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.order.entity.OrderItem;
+import com.example.commercepaymentsystem.domain.order.enums.OrderStatus;
 import com.example.commercepaymentsystem.domain.order.repository.OrderItemRepository;
 import com.example.commercepaymentsystem.domain.order.repository.OrderRepository;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
@@ -37,6 +38,14 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
     private final PaymentService paymentService;
+
+    public void confirmOrder(Order order) {
+        order.markAsConfirmed();
+    }
+
+    public void cancelOrder(Order order) {
+        order.markAsCancelled();
+    }
 
     @Transactional
     public OrderCreateResponse createDirectOrder(Long memberId, OrderCreateRequest request) {

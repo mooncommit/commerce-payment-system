@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -20,40 +22,114 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
 
+    /**
+     * 결제 대기 상태의 결제를 생성한다.
+     *
+     * @param order 결제가 연결될 주문
+     * @param paymentMethodType 결제 수단
+     * @return 저장된 결제 엔티티
+     */
     @Transactional
     public Payment createPendingPayment(Order order, PaymentMethodType paymentMethodType) {
         Payment payment = Payment.createPending(order, paymentMethodType);
-
         return paymentRepository.save(payment);
     }
 
-    // 결제 확정 요청 기본 검증
-    public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest request) {
-        // 서버에 저장된 주문 ID와 PortOne 결제 식별자 기준으로 결제 정보 조회
-        Payment payment = paymentRepository.findByOrder_IdAndPortonePaymentId(
-                        request.getOrderId(),
-                        request.getPortonePaymentId()
-                )
-                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
-        Order order = payment.getOrder();
+    /**
+     * 결제 확정 요청에 대한 기본 검증을 수행하고 응답을 반환한다.
+     *
+     * <p>이 단계에서는 PG 검증 전이므로 결제 상태를 바꾸지 않고,
+     * 서버에 저장된 결제 정보만 응답으로 내려준다.
+     *
+     * @param memberId 요청한 회원 ID
+     * @param request 결제 확정 요청 정보
+     * @return 결제 확정 응답
+     */
+    @Transactional
+    public PaymentConfirmResponse confirmPayment(Long memberId, PaymentConfirmRequest request) {
+        Payment payment = findReadyPayment(memberId, request);
 
-        // 이미 처리된 결제는 다시 확정할 수 없도록 차단
-        if (payment.getStatus() != PaymentStatus.READY) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
 
-        // 아직 PortOne 검증 전이므로 서버에 저장된 결제 정보만 응답에 담아 반환
+        return toConfirmResponse(payment);
+    }
+
+    /**
+     * 결제 확정에 필요한 결제 엔티티를 조회하고 요청값을 검증한다.
+     *
+     * @param memberId 요청한 회원 ID
+     * @param request 결제 요청 정보
+     * @return 검증을 통과한 결제 엔티티
+     */
+    @Transactional
+    public Payment findReadyPayment(Long memberId, PaymentConfirmRequest request) {
+        Payment payment = paymentRepository.findByIdAndOrder_Member_Id(request.getPaymentId(), memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        if (!Objects.equals(payment.getPortonePaymentId(), request.getPortonePaymentId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_ID_MISMATCH);
+        }
+
+        return payment;
+    }
+
+    /**
+     * 결제 상태를 완료로 변경한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     */
+    @Transactional
+    public void markPaid(Payment payment) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
+        }
+        payment.markPaid();
+    }
+
+    /**
+     * 결제 상태를 실패로 변경한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     * @param failureReason 실패 사유
+     */
+    @Transactional
+    public void markFailed(Payment payment, String failureReason) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
+        }
+        payment.markFailed(failureReason);
+    }
+
+    /**
+     * 결제 상태를 취소로 변경한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     */
+    public void cancelPayment(Payment payment) {
+        payment.markCanceled();
+    }
+
+    /**
+     * 결제 확정 응답 DTO를 생성한다.
+     *
+     * @param payment 응답으로 변환할 결제
+     * @return 결제 확정 응답
+     */
+    public PaymentConfirmResponse toConfirmResponse(Payment payment) {
+        Order order = payment.getOrder();
+
         return PaymentConfirmResponse.builder()
                 .paymentId(payment.getId())
                 .orderId(order.getId())
                 .orderNumber(order.getOrderNumber())
-                .portonePaymentId(payment.getPortonePaymentId())
                 .paymentStatus(payment.getStatus())
                 .orderStatus(order.getOrderStatus())
-                .totalAmount(payment.getTotalOrderAmount())
-                .usedPointAmount(payment.getUsedPointAmount())
-                .pgAmount(payment.getPgAmount())
-                .paidAt(order.getPaidAt())
+                .totalAmount(order.getTotalAmount())
+                .usedPointAmount(order.getUsedPointAmount())
+                .pgAmount(order.getPgAmount())
+                .paidAt(payment.getPaidAt())
                 .build();
     }
 }
