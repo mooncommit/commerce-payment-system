@@ -88,10 +88,21 @@ public class PaymentService {
      */
     @Transactional
     public void markPaid(Payment payment) {
+        markPaid(payment, null);
+    }
+
+    /**
+     * 결제 상태를 완료로 변경하고 PG 거래 ID를 저장한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     * @param portoneTransactionId PG 거래 ID
+     */
+    @Transactional
+    public void markPaid(Payment payment, String portoneTransactionId) {
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
-        payment.markPaid();
+        payment.markPaid(portoneTransactionId);
     }
 
     /**
