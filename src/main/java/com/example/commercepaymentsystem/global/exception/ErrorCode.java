@@ -41,7 +41,10 @@ public enum ErrorCode implements BaseCode {
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_002", "장바구니 항목을 찾을 수 없습니다."),
     INVALID_CART_QUANTITY(HttpStatus.BAD_REQUEST, "CART_003", "장바구니 수량은 1 이상이어야 합니다."),
 
-    // ── Order ──────────────────────────────────────────────
+    // ── POINT ──────────────────────────────────────────────
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "POINT_001", "포인트가 부족합니다."),
+
+    // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001", "주문을 찾을 수 없습니다."),
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "ORDER_002", "유효하지 않은 주문 상태 변경입니다."),
     INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_003", "주문 수량이 올바르지 않습니다."),
