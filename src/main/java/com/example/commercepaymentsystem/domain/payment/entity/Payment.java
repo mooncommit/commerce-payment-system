@@ -95,22 +95,6 @@ public class Payment extends BaseEntity {
         changeStatus(PaymentStatus.REFUNDED);
     }
 
-    public Long getMemberId() {
-        return order.getMember().getId();
-    }
-
-    public Long getUsedPointAmount() {
-        return order.getUsedPointAmount();
-    }
-
-    public Long getPgAmount() {
-        return order.getPgAmount();
-    }
-
-    public Long getEarnedPointAmount() {
-        return 0L;
-    }
-
     private void changeStatus(PaymentStatus newStatus) {
         if (!this.status.canTransitTo(newStatus)) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);

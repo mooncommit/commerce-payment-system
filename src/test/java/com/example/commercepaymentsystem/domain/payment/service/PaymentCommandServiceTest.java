@@ -33,7 +33,7 @@ class PaymentCommandServiceTest {
         OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
         ProductRepository productRepository = mock(ProductRepository.class);
         PaymentService paymentService = new PaymentService(paymentRepository);
-        OrderService orderService = new OrderService(null, null, null, null, paymentService);
+        OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
         ProductService productService = new ProductService(productRepository);
         PaymentCommandService commandService = new PaymentCommandService(paymentService, orderService, productService, orderItemRepository);
 
@@ -70,7 +70,7 @@ class PaymentCommandServiceTest {
         OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
         ProductRepository productRepository = mock(ProductRepository.class);
         PaymentService paymentService = new PaymentService(paymentRepository);
-        OrderService orderService = new OrderService(null, null, null, null, paymentService);
+        OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
         ProductService productService = new ProductService(productRepository);
         PaymentCommandService commandService = new PaymentCommandService(paymentService, orderService, productService, orderItemRepository);
 

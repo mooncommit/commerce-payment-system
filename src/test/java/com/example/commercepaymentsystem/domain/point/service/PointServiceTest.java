@@ -2,6 +2,7 @@ package com.example.commercepaymentsystem.domain.point.service;
 
 import com.example.commercepaymentsystem.domain.member.entity.Member;
 import com.example.commercepaymentsystem.domain.member.repository.MemberRepository;
+import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.point.dto.GetMyPointResponse;
 import com.example.commercepaymentsystem.domain.point.dto.PointHistoryResponse;
@@ -127,11 +128,7 @@ class PointServiceTest {
         ReflectionTestUtils.setField(member, "id", memberId);
         ReflectionTestUtils.setField(member, "pointBalance", 5000L);
 
-        Payment payment = mock(Payment.class);
-
-        given(payment.getId()).willReturn(10L);
-        given(payment.getMemberId()).willReturn(memberId);
-        given(payment.getUsedPointAmount()).willReturn(3000L);
+        Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
 
         given(memberRepository.findByIdForUpdate(memberId))
                 .willReturn(Optional.of(member));
@@ -165,11 +162,7 @@ class PointServiceTest {
         ReflectionTestUtils.setField(member, "id", memberId);
         ReflectionTestUtils.setField(member, "pointBalance", 5000L);
 
-        Payment payment = mock(Payment.class);
-
-        given(payment.getId()).willReturn(10L);
-        given(payment.getMemberId()).willReturn(memberId);
-        given(payment.getEarnedPointAmount()).willReturn(300L);
+        Payment payment = paymentWithOrder(10L, member, 0L, 300L);
 
         given(memberRepository.findByIdForUpdate(memberId))
                 .willReturn(Optional.of(member));
@@ -203,10 +196,7 @@ class PointServiceTest {
         ReflectionTestUtils.setField(member, "id", memberId);
         ReflectionTestUtils.setField(member, "pointBalance", 1000L);
 
-        Payment payment = mock(Payment.class);
-
-        given(payment.getMemberId()).willReturn(memberId);
-        given(payment.getUsedPointAmount()).willReturn(3000L);
+        Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
 
         given(memberRepository.findByIdForUpdate(memberId))
                 .willReturn(Optional.of(member));
@@ -218,5 +208,27 @@ class PointServiceTest {
         assertThat(member.getPointBalance()).isEqualTo(1000L);
 
         then(pointRepository).should(never()).save(any(Point.class));
+    }
+
+    private Payment paymentWithOrder(Long paymentId, Member member, Long usedPointAmount, Long earnedPointAmount) {
+        Order order = newEntity(Order.class);
+        ReflectionTestUtils.setField(order, "member", member);
+        ReflectionTestUtils.setField(order, "usedPointAmount", usedPointAmount);
+        ReflectionTestUtils.setField(order, "earnedPointAmount", earnedPointAmount);
+
+        Payment payment = newEntity(Payment.class);
+        ReflectionTestUtils.setField(payment, "id", paymentId);
+        ReflectionTestUtils.setField(payment, "order", order);
+        return payment;
+    }
+
+    private static <T> T newEntity(Class<T> entityType) {
+        try {
+            java.lang.reflect.Constructor<T> constructor = entityType.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
