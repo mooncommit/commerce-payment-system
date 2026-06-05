@@ -6,7 +6,17 @@ import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,16 +50,6 @@ public class Payment extends BaseEntity {
     @Column(nullable = false, length = 30)
     private PaymentMethodType paymentMethodType;
 
-    // 주문 금액 스냅샷. 주문 금액이 바뀌어도 결제 당시 검증 기준은 유지한다.
-    @Column(nullable = false)
-    private Long totalOrderAmount;
-
-    @Column(nullable = false)
-    private Long usedPointAmount;
-
-    @Column(nullable = false)
-    private Long pgAmount;
-
     private LocalDateTime paidAt;
 
     private LocalDateTime failedAt;
@@ -65,9 +65,6 @@ public class Payment extends BaseEntity {
         payment.order = order;
         payment.status = PaymentStatus.PENDING;
         payment.paymentMethodType = paymentMethodType;
-        payment.totalOrderAmount = order.getTotalAmount();
-        payment.usedPointAmount = order.getUsedPointAmount();
-        payment.pgAmount = order.getPgAmount();
         payment.portonePaymentId = generatePortonePaymentId();
         return payment;
     }
@@ -91,7 +88,6 @@ public class Payment extends BaseEntity {
         changeStatus(PaymentStatus.REFUNDED);
     }
 
-    // 결제 상태 변경 로직
     private void changeStatus(PaymentStatus newStatus) {
         if (!this.status.canTransitTo(newStatus)) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);

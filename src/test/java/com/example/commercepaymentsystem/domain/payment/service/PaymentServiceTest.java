@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,14 +34,15 @@ class PaymentServiceTest {
         setField(order, "totalAmount", 50_000L);
         setField(order, "usedPointAmount", 10_000L);
         setField(order, "pgAmount", 40_000L);
+        setField(order, "paidAt", LocalDateTime.of(2026, 1, 1, 10, 0));
+
         Payment payment = newEntity(Payment.class);
         setField(payment, "id", 1L);
         setField(payment, "order", order);
         setField(payment, "status", PaymentStatus.PENDING);
         setField(payment, "portonePaymentId", "pay_test");
-        setField(payment, "totalOrderAmount", 50_000L);
-        setField(payment, "usedPointAmount", 10_000L);
-        setField(payment, "pgAmount", 40_000L);
+        setField(payment, "paidAt", LocalDateTime.of(2026, 1, 1, 10, 5));
+
         PaymentConfirmRequest request = newEntity(PaymentConfirmRequest.class);
         setField(request, "paymentId", 1L);
         setField(request, "portonePaymentId", "pay_test");
@@ -57,6 +59,7 @@ class PaymentServiceTest {
         assertEquals(50_000L, response.getTotalAmount());
         assertEquals(10_000L, response.getUsedPointAmount());
         assertEquals(40_000L, response.getPgAmount());
+        assertEquals(LocalDateTime.of(2026, 1, 1, 10, 5), response.getPaidAt());
     }
 
     @Test

@@ -50,9 +50,6 @@ class PaymentCommandServiceTest {
         setField(payment, "order", order);
         setField(payment, "status", PaymentStatus.PENDING);
         setField(payment, "portonePaymentId", "pay_test");
-        setField(payment, "totalOrderAmount", 50_000L);
-        setField(payment, "usedPointAmount", 10_000L);
-        setField(payment, "pgAmount", 40_000L);
 
         PaymentConfirmRequest request = newEntity(PaymentConfirmRequest.class);
         setField(request, "paymentId", 1L);

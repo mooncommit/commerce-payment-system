@@ -126,9 +126,9 @@ public class PaymentService {
                 .orderNumber(order.getOrderNumber())
                 .paymentStatus(payment.getStatus())
                 .orderStatus(order.getOrderStatus())
-                .totalAmount(payment.getTotalOrderAmount())
-                .usedPointAmount(payment.getUsedPointAmount())
-                .pgAmount(payment.getPgAmount())
+                .totalAmount(order.getTotalAmount())
+                .usedPointAmount(order.getUsedPointAmount())
+                .pgAmount(order.getPgAmount())
                 .paidAt(payment.getPaidAt())
                 .build();
     }
