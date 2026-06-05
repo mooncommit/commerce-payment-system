@@ -1,5 +1,6 @@
 package com.example.commercepaymentsystem.domain.product.service;
 
+import com.example.commercepaymentsystem.domain.product.dto.ProductResponse;
 import com.example.commercepaymentsystem.domain.product.entity.Product;
 import com.example.commercepaymentsystem.domain.product.repository.ProductRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
@@ -9,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.commercepaymentsystem.domain.product.dto.ProductRequest;
 import com.example.commercepaymentsystem.domain.product.enums.SaleStatus;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class ProductService {
         product.restoreStock(quantity);
     }
 
+    // 상품 등록
     @Transactional
     public void createProduct(ProductRequest request) {
         Product product = new Product(
@@ -39,4 +44,13 @@ public class ProductService {
         );
         productRepository.save(product);
     }
+
+    // 상품 전체 조회
+    public List<ProductResponse> findAllProducts() {
+        // 상품 전체 조회 후 DTO 리스트로 변환
+        return productRepository.findAll().stream()
+                .map(ProductResponse::from) //메서드 참조 방식
+                .toList();
+    }
+
 }
