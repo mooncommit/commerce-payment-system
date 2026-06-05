@@ -25,6 +25,14 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew clean build
+        env:
+          DB_URL: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+          DB_USERNAME: sa
+          DB_PASSWORD: ""
+          JWT_SECRET: test-secret-key-test-secret-key-test-secret-key
+          PORTONE_API_SECRET: test
+          PORTONE_STORE_ID: test
+          PORTONE_CHANNEL_KEY: test
 
       - name: Copy jar to EC2
         uses: appleboy/scp-action@v0.1.7
