@@ -7,6 +7,8 @@ import com.example.commercepaymentsystem.domain.member.repository.MemberReposito
 import com.example.commercepaymentsystem.domain.order.dto.CartOrderCreateRequest;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateRequest;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateResponse;
+import com.example.commercepaymentsystem.domain.order.dto.OrderDetailItemResponse;
+import com.example.commercepaymentsystem.domain.order.dto.OrderDetailResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderItemResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderListResponse;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
@@ -16,6 +18,7 @@ import com.example.commercepaymentsystem.domain.order.repository.OrderRepository
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
+import com.example.commercepaymentsystem.domain.payment.repository.PaymentRepository;
 import com.example.commercepaymentsystem.domain.product.entity.Product;
 import com.example.commercepaymentsystem.domain.product.repository.ProductRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
@@ -53,6 +56,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
     private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
 
     public void confirmOrder(Order order) {
         order.markAsConfirmed();
@@ -81,6 +85,39 @@ public class OrderService {
                 orderPage.getSize(),
                 orderPage.getTotalElements(),
                 orderPage.getTotalPages()
+        );
+    }
+
+    // 내 주문 상세 조회
+    public OrderDetailResponse getOrderDetail(Long memberId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getMember().getId().equals(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ORDER);
+        }
+
+        Payment payment = paymentRepository.findByOrderIdWithOrder(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+        List<OrderDetailItemResponse> items = orderItemRepository.findAllByOrder_Id(orderId)
+                .stream()
+                .map(this::toOrderDetailItemResponse)
+                .toList();
+
+        return new OrderDetailResponse(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getOrderStatus(),
+                payment.getId(),
+                payment.getStatus(),
+                order.getTotalAmount(),
+                order.getUsedPointAmount(),
+                order.getPgAmount(),
+                order.getEarnedPointAmount(),
+                order.getCreatedAt(),
+                order.getPaidAt(),
+                order.getCanceledAt(),
+                items
         );
     }
 
@@ -283,6 +320,17 @@ public class OrderService {
                 order.getPgAmount(),
                 order.getEarnedPointAmount(),
                 order.getCreatedAt()
+        );
+    }
+
+    private OrderDetailItemResponse toOrderDetailItemResponse(OrderItem orderItem) {
+        return new OrderDetailItemResponse(
+                orderItem.getId(),
+                orderItem.getProduct().getId(),
+                orderItem.getProductName(),
+                orderItem.getUnitPrice(),
+                orderItem.getQuantity(),
+                orderItem.getLineTotalAmount()
         );
     }
 
