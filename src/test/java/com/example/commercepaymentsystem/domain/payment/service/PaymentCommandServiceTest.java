@@ -127,7 +127,7 @@ class PaymentCommandServiceTest {
     }
 
     @Test
-    void refundPaymentAndOrderChangesPaymentAndOrderRestoresStockAndCreatesRefund() {
+    void refundPaymentAndOrderChangesPaymentAndOrderRestoresStockAndCompletesRefund() {
         PaymentRepository paymentRepository = mock(PaymentRepository.class);
         OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
         ProductRepository productRepository = mock(ProductRepository.class);
@@ -168,9 +168,9 @@ class PaymentCommandServiceTest {
         when(paymentRepository.findByIdWithOrder(1L)).thenReturn(Optional.of(payment));
         when(orderItemRepository.findAllByOrder_Id(1L)).thenReturn(List.of(orderItem));
         when(productRepository.findById(100L)).thenReturn(Optional.of(product));
-        when(refundService.createRefund(payment, "단순 변심")).thenReturn(refund);
+        when(refundService.markCompleted(2L)).thenReturn(refund);
 
-        Refund result = commandService.refundPaymentAndOrder(1L, "단순 변심");
+        Refund result = commandService.refundPaymentAndOrder(1L, 2L);
 
         assertEquals(refund, result);
         assertEquals(PaymentStatus.REFUNDED, payment.getStatus());
@@ -178,7 +178,7 @@ class PaymentCommandServiceTest {
         assertEquals(7, product.getStockQuantity());
         verify(pointService).restoreUsedPoints(payment);
         verify(pointService).revokeEarnedPoints(payment);
-        verify(refundService).createRefund(payment, "단순 변심");
+        verify(refundService).markCompleted(2L);
     }
 
     private static <T> T newEntity(Class<T> entityType) {

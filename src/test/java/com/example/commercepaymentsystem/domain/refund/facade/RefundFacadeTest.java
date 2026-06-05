@@ -11,6 +11,8 @@ import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
 import com.example.commercepaymentsystem.domain.refund.dto.RefundRequest;
 import com.example.commercepaymentsystem.domain.refund.dto.RefundResponse;
 import com.example.commercepaymentsystem.domain.refund.entity.Refund;
+import com.example.commercepaymentsystem.domain.refund.enums.RefundStatus;
+import com.example.commercepaymentsystem.domain.refund.service.RefundService;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
@@ -31,55 +33,68 @@ import static org.mockito.Mockito.when;
 class RefundFacadeTest {
 
     @Test
-    void requestRefundCommitsInternalStateBeforePgCancel() {
+    void requestRefundCreatesRequestedRefundBeforePgCancelAndCompletesAfterPgSuccess() {
         PaymentService paymentService = mock(PaymentService.class);
         PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
+        RefundService refundService = mock(RefundService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, paymentGateway);
+        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, refundService, paymentGateway);
         Payment payment = completedPayment(1L, 10L, "pay_test");
-        Refund refund = refund(payment, "단순 변심");
+        Refund requestedRefund = refund(2L, payment, "단순 변심");
+        Refund completedRefund = refund(2L, payment, "단순 변심");
+        completedRefund.markAsCompleted();
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
 
         when(paymentService.findByIdWithOrder(1L)).thenReturn(payment);
-        when(paymentCommandService.refundPaymentAndOrder(1L, "단순 변심")).thenReturn(refund);
+        when(refundService.createRefund(payment, "단순 변심")).thenReturn(requestedRefund);
+        when(paymentCommandService.refundPaymentAndOrder(1L, 2L)).thenReturn(completedRefund);
 
         RefundResponse response = refundFacade.requestRefund(loginMember, 1L, new RefundRequest("단순 변심"));
 
         assertEquals(1L, response.getPaymentId());
-        InOrder inOrder = inOrder(paymentCommandService, paymentGateway);
-        inOrder.verify(paymentCommandService).refundPaymentAndOrder(1L, "단순 변심");
+        assertEquals(RefundStatus.COMPLETED, response.getRefundStatus());
+        InOrder inOrder = inOrder(refundService, paymentGateway, paymentCommandService);
+        inOrder.verify(refundService).createRefund(payment, "단순 변심");
         inOrder.verify(paymentGateway).cancelPayment("pay_test", "단순 변심");
+        inOrder.verify(paymentCommandService).refundPaymentAndOrder(1L, 2L);
     }
 
     @Test
-    void requestRefundReturnsResponseEvenWhenPgCancelFailsAfterInternalCommit() {
+    void requestRefundMarksRefundFailedWhenPgCancelFailsAndSkipsInternalStateChanges() {
         PaymentService paymentService = mock(PaymentService.class);
         PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
+        RefundService refundService = mock(RefundService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, paymentGateway);
+        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, refundService, paymentGateway);
         Payment payment = completedPayment(1L, 10L, "pay_test");
-        Refund refund = refund(payment, "단순 변심");
+        Refund requestedRefund = refund(2L, payment, "단순 변심");
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
 
         when(paymentService.findByIdWithOrder(1L)).thenReturn(payment);
-        when(paymentCommandService.refundPaymentAndOrder(1L, "단순 변심")).thenReturn(refund);
+        when(refundService.createRefund(payment, "단순 변심")).thenReturn(requestedRefund);
         doThrow(new RuntimeException("cancel failed"))
                 .when(paymentGateway)
                 .cancelPayment("pay_test", "단순 변심");
 
-        RefundResponse response = refundFacade.requestRefund(loginMember, 1L, new RefundRequest("단순 변심"));
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> refundFacade.requestRefund(loginMember, 1L, new RefundRequest("단순 변심"))
+        );
 
-        assertEquals(1L, response.getPaymentId());
-        verify(paymentCommandService).refundPaymentAndOrder(1L, "단순 변심");
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, exception.getErrorCode());
+        verify(refundService).createRefund(payment, "단순 변심");
+        verify(refundService).markFailed(2L);
         verify(paymentGateway).cancelPayment("pay_test", "단순 변심");
+        verify(paymentCommandService, never()).refundPaymentAndOrder(1L, 2L);
     }
 
     @Test
     void requestRefundRejectsOtherMemberPaymentBeforeInternalTransactionAndPgCancel() {
         PaymentService paymentService = mock(PaymentService.class);
         PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
+        RefundService refundService = mock(RefundService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, paymentGateway);
+        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, refundService, paymentGateway);
         Payment payment = completedPayment(1L, 10L, "pay_test");
         LoginMember loginMember = new LoginMember(20L, "member@example.com");
 
@@ -91,7 +106,8 @@ class RefundFacadeTest {
         );
 
         assertEquals(ErrorCode.PAYMENT_NOT_FOUND, exception.getErrorCode());
-        verify(paymentCommandService, never()).refundPaymentAndOrder(1L, "단순 변심");
+        verify(refundService, never()).createRefund(payment, "단순 변심");
+        verify(paymentCommandService, never()).refundPaymentAndOrder(1L, 2L);
         verify(paymentGateway, never()).cancelPayment("pay_test", "단순 변심");
     }
 
@@ -99,8 +115,9 @@ class RefundFacadeTest {
     void requestRefundRejectsNotCompletedPaymentBeforeInternalTransactionAndPgCancel() {
         PaymentService paymentService = mock(PaymentService.class);
         PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
+        RefundService refundService = mock(RefundService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
-        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, paymentGateway);
+        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, refundService, paymentGateway);
         Payment payment = completedPayment(1L, 10L, "pay_test");
         setField(payment, "status", PaymentStatus.PENDING);
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
@@ -113,7 +130,8 @@ class RefundFacadeTest {
         );
 
         assertEquals(ErrorCode.INVALID_REFUND_STATUS, exception.getErrorCode());
-        verify(paymentCommandService, never()).refundPaymentAndOrder(1L, "단순 변심");
+        verify(refundService, never()).createRefund(payment, "단순 변심");
+        verify(paymentCommandService, never()).refundPaymentAndOrder(1L, 2L);
         verify(paymentGateway, never()).cancelPayment("pay_test", "단순 변심");
     }
 
@@ -134,13 +152,15 @@ class RefundFacadeTest {
         return payment;
     }
 
-    private static Refund refund(Payment payment, String reason) {
-        return Refund.builder()
+    private static Refund refund(Long refundId, Payment payment, String reason) {
+        Refund refund = Refund.builder()
                 .payment(payment)
                 .refundPgAmount(40_000L)
                 .refundPointAmount(10_000L)
                 .reason(reason)
                 .build();
+        setField(refund, "id", refundId);
+        return refund;
     }
 
     private static <T> T newEntity(Class<T> entityType) {

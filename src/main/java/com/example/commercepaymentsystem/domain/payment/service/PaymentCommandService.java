@@ -72,8 +72,33 @@ public class PaymentCommandService {
         restoreStock(payment.getOrder());
     }
 
+    /**
+     * PG 취소가 성공한 결제의 내부 환불 후처리를 완료한다.
+     *
+     * <p>흐름:
+     * <ol>
+     *     <li>paymentId로 결제와 주문을 함께 조회한다.</li>
+     *     <li>이미 완료된 결제인지 검증한다.</li>
+     *     <li>결제 상태를 REFUNDED로 변경한다.</li>
+     *     <li>주문 상태를 CANCELED로 변경한다.</li>
+     *     <li>주문 상품들의 재고를 복구한다.</li>
+     *     <li>주문 시 사용한 포인트를 복구하고, 적립된 포인트는 회수한다.</li>
+     *     <li>앞에서 생성한 환불 이력(Refund)을 COMPLETED로 변경한다.</li>
+     * </ol>
+     *
+     * <p>환불 성공 후처리는 단순히 결제 상태만 바꾸는 작업이 아니라, 주문/재고/포인트/환불 이력이
+     * 함께 정리되어야 하는 유스케이스다. PG 취소가 성공한 뒤에만 결제 상태를 환불 완료로 바꾸고,
+     * Refund 상태도 COMPLETED로 확정한다.
+     *
+     * <p>PG 취소 호출은 트랜잭션 밖의 Facade에서 처리하고, 이 메서드는 내부 DB 상태 변경만 담당한다.
+     * 이 모든 단계는 하나의 트랜잭션으로 묶여 하나라도 실패하면 전부 롤백된다.
+     *
+     * @param paymentId 환불할 결제 ID
+     * @param refundId 완료 처리할 환불 ID
+     * @return 완료 처리된 환불 정보
+     */
     @Transactional
-    public Refund refundPaymentAndOrder(Long paymentId, String reason) {
+    public Refund refundPaymentAndOrder(Long paymentId, Long refundId) {
         Payment payment = paymentService.findByIdWithOrder(paymentId);
         validateCompleted(payment);
 
@@ -83,7 +108,7 @@ public class PaymentCommandService {
         pointService.restoreUsedPoints(payment);
         pointService.revokeEarnedPoints(payment);
 
-        return refundService.createRefund(payment, reason);
+        return refundService.markCompleted(refundId);
     }
 
     /**
@@ -109,6 +134,11 @@ public class PaymentCommandService {
         }
     }
 
+    /**
+     * 결제가 완료된 건만 환불할 수 있게 막는다.
+     *
+     * @param payment 검증할 결제
+     */
     private void validateCompleted(Payment payment) {
         if (payment.getStatus() != PaymentStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);

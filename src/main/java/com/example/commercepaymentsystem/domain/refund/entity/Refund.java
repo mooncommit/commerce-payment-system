@@ -69,4 +69,10 @@ public class Refund extends BaseEntity {
     public void markAsFailed() {
         this.refundStatus = RefundStatus.FAILED;
     }
+
+    public void markAsRequested(String reason) {
+        this.reason = reason;
+        this.refundStatus = RefundStatus.REQUESTED;
+        this.refundedAt = null;
+    }
 }
