@@ -16,7 +16,10 @@ public class Point extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+/*
+원장 테이블 성격상
+객체가 필요한게아닌 id값만 필요함
+ */
     @Column(name = "member_id", nullable = false)
     private Long memberId;
 
@@ -31,8 +34,17 @@ public class Point extends BaseEntity {
     private Long amount;
 
     @Column(nullable = false)
-    private Long balnceAfter;
+    private Long balanceAfter;
 
     private String reason;
 
+    public Point(Long memberId,Long paymentId,PointType pointType,Long amount,Long balanceAfter,String reason)
+    {
+        this.memberId=memberId;
+        this.paymentId=paymentId;
+        this.pointType = pointType;
+        this.amount=amount;
+        this.balanceAfter = balanceAfter;
+        this.reason=reason;
+    }
 }

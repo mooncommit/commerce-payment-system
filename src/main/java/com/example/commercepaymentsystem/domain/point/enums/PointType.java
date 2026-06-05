@@ -6,10 +6,10 @@ public enum PointType {
     REFUND("사용복구"),
     REVOKE("회수");
 
-    private final String reason;
+    private final String description;
 
-    PointType(String reason)
+    PointType(String description)
     {
-        this.reason= reason;
+        this.description= description;
     }
 }

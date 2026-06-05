@@ -2,6 +2,8 @@ package com.example.commercepaymentsystem.domain.member.entity;
 
 import com.example.commercepaymentsystem.domain.member.enums.MemberShip;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
+import com.example.commercepaymentsystem.global.exception.BusinessException;
+import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -35,6 +37,18 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MemberShip memberShip;
+
+    public void increasePoint(Long amount) {
+        this.pointBalance += amount;
+    }
+
+    public void decreasePoint(Long amount) {
+        if (this.pointBalance < amount) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_POINT);
+        }
+
+        this.pointBalance -= amount;
+    }
 
     public Member(String email, String passwordHash, String name, String phoneNumber) {
         this.email = email;
