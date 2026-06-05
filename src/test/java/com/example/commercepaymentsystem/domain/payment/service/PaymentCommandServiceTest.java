@@ -14,6 +14,9 @@ import com.example.commercepaymentsystem.domain.product.entity.Product;
 import com.example.commercepaymentsystem.domain.product.enums.SaleStatus;
 import com.example.commercepaymentsystem.domain.product.repository.ProductRepository;
 import com.example.commercepaymentsystem.domain.product.service.ProductService;
+import com.example.commercepaymentsystem.domain.point.service.PointService;
+import com.example.commercepaymentsystem.domain.refund.service.RefundService;
+import com.example.commercepaymentsystem.domain.refund.entity.Refund;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
@@ -23,6 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PaymentCommandServiceTest {
@@ -35,7 +39,14 @@ class PaymentCommandServiceTest {
         PaymentService paymentService = new PaymentService(paymentRepository);
         OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
         ProductService productService = new ProductService(productRepository);
-        PaymentCommandService commandService = new PaymentCommandService(paymentService, orderService, productService, orderItemRepository);
+        PaymentCommandService commandService = new PaymentCommandService(
+                paymentService,
+                orderService,
+                productService,
+                orderItemRepository,
+                mock(PointService.class),
+                mock(RefundService.class)
+        );
 
         Order order = newEntity(Order.class);
         setField(order, "id", 1L);
@@ -72,7 +83,14 @@ class PaymentCommandServiceTest {
         PaymentService paymentService = new PaymentService(paymentRepository);
         OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
         ProductService productService = new ProductService(productRepository);
-        PaymentCommandService commandService = new PaymentCommandService(paymentService, orderService, productService, orderItemRepository);
+        PaymentCommandService commandService = new PaymentCommandService(
+                paymentService,
+                orderService,
+                productService,
+                orderItemRepository,
+                mock(PointService.class),
+                mock(RefundService.class)
+        );
 
         Order order = newEntity(Order.class);
         setField(order, "id", 1L);
@@ -106,6 +124,61 @@ class PaymentCommandServiceTest {
         assertEquals(PaymentStatus.FAILED, payment.getStatus());
         assertEquals(OrderStatus.CANCELED, order.getOrderStatus());
         assertEquals(7, product.getStockQuantity());
+    }
+
+    @Test
+    void refundPaymentAndOrderChangesPaymentAndOrderRestoresStockAndCreatesRefund() {
+        PaymentRepository paymentRepository = mock(PaymentRepository.class);
+        OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
+        ProductRepository productRepository = mock(ProductRepository.class);
+        PaymentService paymentService = new PaymentService(paymentRepository);
+        OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
+        ProductService productService = new ProductService(productRepository);
+        PointService pointService = mock(PointService.class);
+        RefundService refundService = mock(RefundService.class);
+        PaymentCommandService commandService = new PaymentCommandService(
+                paymentService,
+                orderService,
+                productService,
+                orderItemRepository,
+                pointService,
+                refundService
+        );
+
+        Order order = newEntity(Order.class);
+        setField(order, "id", 1L);
+        setField(order, "orderStatus", OrderStatus.COMPLETED);
+
+        Payment payment = newEntity(Payment.class);
+        setField(payment, "id", 1L);
+        setField(payment, "order", order);
+        setField(payment, "status", PaymentStatus.COMPLETED);
+        setField(payment, "portonePaymentId", "pay_test");
+
+        Product product = newEntity(Product.class);
+        setField(product, "id", 100L);
+        setField(product, "stockQuantity", 5);
+        setField(product, "saleStatus", SaleStatus.ON_SALE);
+
+        OrderItem orderItem = newEntity(OrderItem.class);
+        setField(orderItem, "product", product);
+        setField(orderItem, "quantity", 2);
+
+        Refund refund = mock(Refund.class);
+        when(paymentRepository.findByIdWithOrder(1L)).thenReturn(Optional.of(payment));
+        when(orderItemRepository.findAllByOrder_Id(1L)).thenReturn(List.of(orderItem));
+        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(refundService.createRefund(payment, "단순 변심")).thenReturn(refund);
+
+        Refund result = commandService.refundPaymentAndOrder(1L, "단순 변심");
+
+        assertEquals(refund, result);
+        assertEquals(PaymentStatus.REFUNDED, payment.getStatus());
+        assertEquals(OrderStatus.CANCELED, order.getOrderStatus());
+        assertEquals(7, product.getStockQuantity());
+        verify(pointService).restoreUsedPoints(payment);
+        verify(pointService).revokeEarnedPoints(payment);
+        verify(refundService).createRefund(payment, "단순 변심");
     }
 
     private static <T> T newEntity(Class<T> entityType) {

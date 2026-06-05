@@ -75,6 +75,12 @@ public class PaymentService {
         return payment;
     }
 
+    @Transactional
+    public Payment findByIdWithOrder(Long paymentId) {
+        return paymentRepository.findByIdWithOrder(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
     /**
      * 결제 상태를 완료로 변경한다.
      *

@@ -10,6 +10,9 @@ import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.domain.product.entity.Product;
 import com.example.commercepaymentsystem.domain.product.service.ProductService;
+import com.example.commercepaymentsystem.domain.point.service.PointService;
+import com.example.commercepaymentsystem.domain.refund.entity.Refund;
+import com.example.commercepaymentsystem.domain.refund.service.RefundService;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,8 @@ public class PaymentCommandService {
     private final OrderService orderService;
     private final ProductService productService;
     private final OrderItemRepository orderItemRepository;
+    private final PointService pointService;
+    private final RefundService refundService;
 
     /**
      * 결제 승인 후 결제와 주문 상태를 함께 확정한다.
@@ -67,6 +72,20 @@ public class PaymentCommandService {
         restoreStock(payment.getOrder());
     }
 
+    @Transactional
+    public Refund refundPaymentAndOrder(Long paymentId, String reason) {
+        Payment payment = paymentService.findByIdWithOrder(paymentId);
+        validateCompleted(payment);
+
+        payment.markRefunded();
+        orderService.cancelOrder(payment.getOrder());
+        restoreStock(payment.getOrder());
+        pointService.restoreUsedPoints(payment);
+        pointService.revokeEarnedPoints(payment);
+
+        return refundService.createRefund(payment, reason);
+    }
+
     /**
      * 주문 생성 시 차감한 수량을 상품 엔티티에 다시 더한다.
      *
@@ -87,6 +106,12 @@ public class PaymentCommandService {
     private void validatePending(Payment payment) {
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
+        }
+    }
+
+    private void validateCompleted(Payment payment) {
+        if (payment.getStatus() != PaymentStatus.COMPLETED) {
+            throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
         }
     }
 }

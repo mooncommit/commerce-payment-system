@@ -3,8 +3,7 @@ package com.example.commercepaymentsystem.domain.refund.controller;
 import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.refund.dto.RefundRequest;
 import com.example.commercepaymentsystem.domain.refund.dto.RefundResponse;
-import com.example.commercepaymentsystem.domain.refund.entity.Refund;
-import com.example.commercepaymentsystem.domain.refund.service.RefundService;
+import com.example.commercepaymentsystem.domain.refund.facade.RefundFacade;
 import com.example.commercepaymentsystem.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/payments/{paymentId}/refunds")
 public class RefundController {
 
-    private final RefundService refundService;
+    private final RefundFacade refundFacade;
 
     @PostMapping
     public ResponseEntity<ApiResponse<RefundResponse>> requestRefund(
@@ -30,10 +29,10 @@ public class RefundController {
             @PathVariable Long paymentId,
             @Valid @RequestBody RefundRequest request
     ) {
-        Refund refund = refundService.requestRefund(paymentId, loginMember.getMemberId(), request.getReason());
+        RefundResponse response = refundFacade.requestRefund(loginMember, paymentId, request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(RefundResponse.from(refund), "환불 요청 생성 성공"));
+                .body(ApiResponse.success(response, "환불 요청 생성 성공"));
     }
 }
