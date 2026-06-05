@@ -76,7 +76,7 @@ public class OrderService {
 
         List<OrderListResponse> content = orderPage.getContent()
                 .stream()
-                .map(this::toOrderListResponse)
+                .map(OrderListResponse::from)
                 .toList();
 
         return new PageResponse<>(
@@ -101,24 +101,10 @@ public class OrderService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
         List<OrderDetailItemResponse> items = orderItemRepository.findAllByOrder_Id(orderId)
                 .stream()
-                .map(this::toOrderDetailItemResponse)
+                .map(OrderDetailItemResponse::from)
                 .toList();
 
-        return new OrderDetailResponse(
-                order.getId(),
-                order.getOrderNumber(),
-                order.getOrderStatus(),
-                payment.getId(),
-                payment.getStatus(),
-                order.getTotalAmount(),
-                order.getUsedPointAmount(),
-                order.getPgAmount(),
-                order.getEarnedPointAmount(),
-                order.getCreatedAt(),
-                order.getPaidAt(),
-                order.getCanceledAt(),
-                items
-        );
+        return OrderDetailResponse.from(order, payment, items);
     }
 
     // 상품 바로 주문 생성
@@ -156,17 +142,10 @@ public class OrderService {
         // 결제 대기 데이터는 결제 담당 서비스에 요청
         Payment payment = paymentService.createPendingPayment(savedOrder, PaymentMethodType.CARD);
 
-        return new OrderCreateResponse(
-                savedOrder.getId(),
-                savedOrder.getOrderNumber(),
-                payment.getId(),
-                payment.getPortonePaymentId(),
-                savedOrder.getOrderStatus(),
-                payment.getStatus().name(),
-                savedOrder.getTotalAmount(),
-                savedOrder.getUsedPointAmount(),
-                savedOrder.getPgAmount(),
-                List.of(toOrderItemResponse(savedOrderItem))
+        return OrderCreateResponse.from(
+                savedOrder,
+                payment,
+                List.of(OrderItemResponse.from(savedOrderItem))
         );
     }
 
@@ -210,18 +189,11 @@ public class OrderService {
         // 결제 대기 데이터는 결제 담당 서비스에 요청
         Payment payment = paymentService.createPendingPayment(savedOrder, PaymentMethodType.CARD);
 
-        return new OrderCreateResponse(
-                savedOrder.getId(),
-                savedOrder.getOrderNumber(),
-                payment.getId(),
-                payment.getPortonePaymentId(),
-                savedOrder.getOrderStatus(),
-                payment.getStatus().name(),
-                savedOrder.getTotalAmount(),
-                savedOrder.getUsedPointAmount(),
-                savedOrder.getPgAmount(),
+        return OrderCreateResponse.from(
+                savedOrder,
+                payment,
                 savedOrderItems.stream()
-                        .map(this::toOrderItemResponse)
+                        .map(OrderItemResponse::from)
                         .toList()
         );
     }
@@ -297,41 +269,6 @@ public class OrderService {
         if (member.getPointBalance() < usedPointAmount) {
             throw new BusinessException(ErrorCode.POINT_BALANCE_NOT_ENOUGH);
         }
-    }
-
-    private OrderItemResponse toOrderItemResponse(OrderItem orderItem) {
-        return new OrderItemResponse(
-                orderItem.getId(),
-                orderItem.getProduct().getId(),
-                orderItem.getProductName(),
-                orderItem.getUnitPrice(),
-                orderItem.getQuantity(),
-                orderItem.getLineTotalAmount()
-        );
-    }
-
-    private OrderListResponse toOrderListResponse(Order order) {
-        return new OrderListResponse(
-                order.getId(),
-                order.getOrderNumber(),
-                order.getOrderStatus(),
-                order.getTotalAmount(),
-                order.getUsedPointAmount(),
-                order.getPgAmount(),
-                order.getEarnedPointAmount(),
-                order.getCreatedAt()
-        );
-    }
-
-    private OrderDetailItemResponse toOrderDetailItemResponse(OrderItem orderItem) {
-        return new OrderDetailItemResponse(
-                orderItem.getId(),
-                orderItem.getProduct().getId(),
-                orderItem.getProductName(),
-                orderItem.getUnitPrice(),
-                orderItem.getQuantity(),
-                orderItem.getLineTotalAmount()
-        );
     }
 
     private String generateOrderNumber() {

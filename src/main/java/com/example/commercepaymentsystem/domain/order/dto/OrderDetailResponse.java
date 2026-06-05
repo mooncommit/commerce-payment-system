@@ -1,6 +1,8 @@
 package com.example.commercepaymentsystem.domain.order.dto;
 
+import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.order.enums.OrderStatus;
+import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,4 +27,22 @@ public class OrderDetailResponse {
     private LocalDateTime paidAt;
     private LocalDateTime canceledAt;
     private List<OrderDetailItemResponse> items;
+
+    public static OrderDetailResponse from(Order order, Payment payment, List<OrderDetailItemResponse> items) {
+        return new OrderDetailResponse(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getOrderStatus(),
+                payment.getId(),
+                payment.getStatus(),
+                order.getTotalAmount(),
+                order.getUsedPointAmount(),
+                order.getPgAmount(),
+                order.getEarnedPointAmount(),
+                order.getCreatedAt(),
+                order.getPaidAt(),
+                order.getCanceledAt(),
+                items
+        );
+    }
 }
