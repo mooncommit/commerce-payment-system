@@ -1,5 +1,7 @@
 package com.example.commercepaymentsystem.domain.refund.service;
 
+import com.example.commercepaymentsystem.domain.member.entity.Member;
+import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.domain.payment.repository.PaymentRepository;
@@ -28,7 +30,7 @@ class RefundServiceTest {
     void createRefundCreatesRequestedRefundWithoutCompletedAt() {
         RefundRepository refundRepository = mock(RefundRepository.class);
         RefundService refundService = new RefundService(refundRepository, mock(PaymentRepository.class));
-        Payment payment = mock(Payment.class);
+        Payment payment = newPaidPayment(1L, 10L);
 
         when(refundRepository.save(any(Refund.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -36,6 +38,8 @@ class RefundServiceTest {
 
         assertEquals(payment, refund.getPayment());
         assertEquals("단순 변심", refund.getReason());
+        assertEquals(40_000L, refund.getRefundPgAmount());
+        assertEquals(10_000L, refund.getRefundPointAmount());
         assertEquals(RefundStatus.REQUESTED, refund.getRefundStatus());
         assertNull(refund.getRefundedAt());
         verify(refundRepository).save(refund);
@@ -46,10 +50,7 @@ class RefundServiceTest {
         RefundRepository refundRepository = mock(RefundRepository.class);
         PaymentRepository paymentRepository = mock(PaymentRepository.class);
         RefundService refundService = new RefundService(refundRepository, paymentRepository);
-        Payment payment = newEntity(Payment.class);
-        setField(payment, "id", 1L);
-        setField(payment, "memberId", 10L);
-        setField(payment, "status", PaymentStatus.PAID);
+        Payment payment = newPaidPayment(1L, 10L);
 
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
         when(refundRepository.save(any(Refund.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -58,6 +59,8 @@ class RefundServiceTest {
 
         assertEquals(payment, refund.getPayment());
         assertEquals("단순 변심", refund.getReason());
+        assertEquals(40_000L, refund.getRefundPgAmount());
+        assertEquals(10_000L, refund.getRefundPointAmount());
         assertEquals(RefundStatus.REQUESTED, refund.getRefundStatus());
     }
 
@@ -66,10 +69,7 @@ class RefundServiceTest {
         RefundRepository refundRepository = mock(RefundRepository.class);
         PaymentRepository paymentRepository = mock(PaymentRepository.class);
         RefundService refundService = new RefundService(refundRepository, paymentRepository);
-        Payment payment = newEntity(Payment.class);
-        setField(payment, "id", 1L);
-        setField(payment, "memberId", 10L);
-        setField(payment, "status", PaymentStatus.PAID);
+        Payment payment = newPaidPayment(1L, 10L);
 
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
 
@@ -86,10 +86,8 @@ class RefundServiceTest {
         RefundRepository refundRepository = mock(RefundRepository.class);
         PaymentRepository paymentRepository = mock(PaymentRepository.class);
         RefundService refundService = new RefundService(refundRepository, paymentRepository);
-        Payment payment = newEntity(Payment.class);
-        setField(payment, "id", 1L);
-        setField(payment, "memberId", 10L);
-        setField(payment, "status", PaymentStatus.READY);
+        Payment payment = newPaidPayment(1L, 10L);
+        setField(payment, "status", PaymentStatus.PENDING);
 
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
 
@@ -99,6 +97,22 @@ class RefundServiceTest {
         );
 
         assertEquals(ErrorCode.INVALID_REFUND_STATUS, exception.getErrorCode());
+    }
+
+    private static Payment newPaidPayment(Long paymentId, Long memberId) {
+        Member member = newEntity(Member.class);
+        setField(member, "id", memberId);
+
+        Order order = newEntity(Order.class);
+        setField(order, "member", member);
+        setField(order, "pgAmount", 40_000L);
+        setField(order, "usedPointAmount", 10_000L);
+
+        Payment payment = newEntity(Payment.class);
+        setField(payment, "id", paymentId);
+        setField(payment, "order", order);
+        setField(payment, "status", PaymentStatus.COMPLETED);
+        return payment;
     }
 
     private static <T> T newEntity(Class<T> entityType) {

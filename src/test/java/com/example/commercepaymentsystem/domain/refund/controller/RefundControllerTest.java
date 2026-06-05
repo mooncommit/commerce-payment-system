@@ -49,7 +49,12 @@ class RefundControllerTest {
 
         Payment payment = newEntity(Payment.class);
         setField(payment, "id", 1L);
-        Refund refund = new Refund(payment, "단순 변심");
+        Refund refund = Refund.builder()
+                .payment(payment)
+                .refundPgAmount(40_000L)
+                .refundPointAmount(10_000L)
+                .reason("단순 변심")
+                .build();
         setField(refund, "id", 2L);
 
         when(refundService.requestRefund(1L, 10L, "단순 변심")).thenReturn(refund);
@@ -61,6 +66,8 @@ class RefundControllerTest {
         assertEquals(true, response.getBody().isSuccess());
         assertEquals(2L, response.getBody().getData().getRefundId());
         assertEquals(1L, response.getBody().getData().getPaymentId());
+        assertEquals(40_000L, response.getBody().getData().getRefundPgAmount());
+        assertEquals(10_000L, response.getBody().getData().getRefundPointAmount());
         assertEquals("단순 변심", response.getBody().getData().getReason());
         assertEquals(RefundStatus.REQUESTED, response.getBody().getData().getRefundStatus());
         verify(refundService).requestRefund(1L, 10L, "단순 변심");

@@ -23,11 +23,11 @@ public class RefundService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        if (!payment.getMemberId().equals(memberId)) {
+        if (!payment.getOrder().getMember().getId().equals(memberId)) {
             throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
         }
 
-        if (payment.getStatus() != PaymentStatus.PAID) {
+        if (payment.getStatus() != PaymentStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.INVALID_REFUND_STATUS);
         }
 
@@ -36,7 +36,12 @@ public class RefundService {
 
     @Transactional
     public Refund createRefund(Payment payment, String cancelReason) {
-        Refund refund = new Refund(payment, cancelReason);
+        Refund refund = Refund.builder()
+                .payment(payment)
+                .refundPgAmount(payment.getOrder().getPgAmount())
+                .refundPointAmount(payment.getOrder().getUsedPointAmount())
+                .reason(cancelReason)
+                .build();
         return refundRepository.save(refund);
     }
 

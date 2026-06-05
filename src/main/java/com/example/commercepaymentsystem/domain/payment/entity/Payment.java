@@ -6,7 +6,17 @@ import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,28 +38,19 @@ public class Payment extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
-    @Column(nullable = false)
-    private Long memberId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    private PaymentStatus status = PaymentStatus.READY;
-
-    @Enumerated(EnumType.STRING)
-    private PaymentMethodType paymentMethodType;
-
-    private Long totalOrderAmount;
-
-    private Long usedPointAmount;
-
-    private Long pgAmount;
-
-    private Long earnedPointAmount;
-
+    // PortOne 결제 조회/취소/환불 요청에 사용하는 외부 결제 식별자
     @Column(name = "portone_payment_id", nullable = false, unique = true, length = 200)
     private String portonePaymentId;
 
     private String portoneTransactionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private PaymentStatus status = PaymentStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private PaymentMethodType paymentMethodType;
 
     private LocalDateTime paidAt;
 
@@ -64,22 +65,20 @@ public class Payment extends BaseEntity {
     public static Payment createPending(Order order, PaymentMethodType paymentMethodType) {
         Payment payment = new Payment();
         payment.order = order;
-        payment.memberId = order.getMember().getId();
-        payment.status = PaymentStatus.READY;
+        payment.status = PaymentStatus.PENDING;
         payment.paymentMethodType = paymentMethodType;
-        payment.totalOrderAmount = order.getTotalAmount();
-        payment.usedPointAmount = order.getUsedPointAmount();
-        payment.pgAmount = order.getPgAmount();
-        payment.earnedPointAmount = 0L;
         payment.portonePaymentId = generatePortonePaymentId();
         return payment;
     }
 
-    public void markPaid(String portoneTransactionId, Long earnedPointAmount) {
-        changeStatus(PaymentStatus.PAID);
+    public void markPaid(String portoneTransactionId) {
+        changeStatus(PaymentStatus.COMPLETED);
         this.portoneTransactionId = portoneTransactionId;
-        this.earnedPointAmount = earnedPointAmount;
         this.paidAt = LocalDateTime.now();
+    }
+
+    public void markPaid() {
+        markPaid(null);
     }
 
     public void markFailed(String failureReason) {
@@ -88,11 +87,30 @@ public class Payment extends BaseEntity {
         this.failedAt = LocalDateTime.now();
     }
 
-    public void markCancelled() {
-        changeStatus(PaymentStatus.CANCELLED);
+    public void markCanceled() {
+        changeStatus(PaymentStatus.CANCELED);
     }
 
-    // 결제 상태 변경 로직
+    public void markRefunded() {
+        changeStatus(PaymentStatus.REFUNDED);
+    }
+
+    public Long getMemberId() {
+        return order.getMember().getId();
+    }
+
+    public Long getUsedPointAmount() {
+        return order.getUsedPointAmount();
+    }
+
+    public Long getPgAmount() {
+        return order.getPgAmount();
+    }
+
+    public Long getEarnedPointAmount() {
+        return 0L;
+    }
+
     private void changeStatus(PaymentStatus newStatus) {
         if (!this.status.canTransitTo(newStatus)) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);

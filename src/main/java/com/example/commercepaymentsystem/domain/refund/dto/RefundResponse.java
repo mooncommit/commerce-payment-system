@@ -13,6 +13,8 @@ public class RefundResponse {
 
     private Long refundId;
     private Long paymentId;
+    private Long refundPgAmount;
+    private Long refundPointAmount;
     private RefundStatus refundStatus;
     private String reason;
     private LocalDateTime refundedAt;
@@ -21,6 +23,8 @@ public class RefundResponse {
         return RefundResponse.builder()
                 .refundId(refund.getId())
                 .paymentId(refund.getPayment().getId())
+                .refundPgAmount(refund.getRefundPgAmount())
+                .refundPointAmount(refund.getRefundPointAmount())
                 .refundStatus(refund.getRefundStatus())
                 .reason(refund.getReason())
                 .refundedAt(refund.getRefundedAt())
