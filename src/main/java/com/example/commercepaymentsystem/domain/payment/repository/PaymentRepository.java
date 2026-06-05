@@ -35,4 +35,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // Payment 조회 시 환불 권한 검증에 필요한 Order와 Member를 함께 로딩한다.
     @Query("SELECT p FROM Payment p JOIN FETCH p.order o JOIN FETCH o.member WHERE p.id = :paymentId")
     Optional<Payment> findByIdWithOrder(@Param("paymentId") Long paymentId);
+
+    // 웹훅 처리용: 포트원 결제 고유번호(imp_uid)를 통해 결제와 주문, 회원을 모두 로딩한다.
+    @Query("SELECT p FROM Payment p JOIN FETCH p.order o JOIN FETCH o.member WHERE p.portonePaymentId = :portonePaymentId")
+    Optional<Payment> findByPortonePaymentIdWithOrderAndMember(@Param("portonePaymentId") String portonePaymentId);
 }

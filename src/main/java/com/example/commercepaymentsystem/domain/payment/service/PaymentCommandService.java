@@ -72,6 +72,33 @@ public class PaymentCommandService {
         restoreStock(payment.getOrder());
     }
 
+    @Transactional
+    public void processPaidWebhook(String portonePaymentId) {
+        Payment payment = paymentService.findByPortonePaymentIdForWebhook(portonePaymentId);
+        
+        if (payment.getStatus() == PaymentStatus.COMPLETED) {
+            return; // 멱등성: 이미 성공한 건은 무시
+        }
+        validatePending(payment);
+
+        paymentService.markPaid(payment);
+        orderService.confirmOrder(payment.getOrder());
+    }
+
+    @Transactional
+    public void processFailedWebhook(String portonePaymentId, String failureReason) {
+        Payment payment = paymentService.findByPortonePaymentIdForWebhook(portonePaymentId);
+        
+        if (payment.getStatus() == PaymentStatus.FAILED || payment.getStatus() == PaymentStatus.CANCELED) {
+            return; // 멱등성: 이미 실패/취소된 건은 무시
+        }
+        validatePending(payment);
+
+        paymentService.markFailed(payment, failureReason);
+        orderService.cancelOrder(payment.getOrder());
+        restoreStock(payment.getOrder());
+    }
+
     /**
      * PG 취소가 성공한 결제의 내부 환불 후처리를 완료한다.
      *

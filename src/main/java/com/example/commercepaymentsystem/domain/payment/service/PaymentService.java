@@ -81,6 +81,12 @@ public class PaymentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 
+    @Transactional
+    public Payment findByPortonePaymentIdForWebhook(String portonePaymentId) {
+        return paymentRepository.findByPortonePaymentIdWithOrderAndMember(portonePaymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
     /**
      * 결제 상태를 완료로 변경한다.
      *
