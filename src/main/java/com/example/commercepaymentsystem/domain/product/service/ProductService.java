@@ -53,4 +53,11 @@ public class ProductService {
                 .toList();
     }
 
+    // 상품 단 건 조회
+    public ProductResponse findProduct(Long productId) {
+        // 상품을 조회하고, DTO로 변환하여 반환
+        Product product = findProductEntity(productId);
+        return ProductResponse.from(product);
+    }
+
 }

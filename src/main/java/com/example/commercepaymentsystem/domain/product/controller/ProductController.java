@@ -27,4 +27,10 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> getProducts() {
         return ResponseEntity.ok(productService.findAllProducts());
     }
+
+    // 상품 단 건 조회
+    @GetMapping("/{productId}") // 명세서에 맞게 {productId}로 변경
+    public ResponseEntity<ProductResponse> getProduct(@PathVariable Long productId) { // 변수명도 productId로 통일
+        return ResponseEntity.ok(productService.findProduct(productId));
+    }
 }
