@@ -39,6 +39,12 @@ public enum ErrorCode implements BaseCode {
     OUT_OF_STOCK(HttpStatus.CONFLICT, "PRODUCT_003", "주문 수량이 현재 재고보다 많습니다."),
     PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "PRODUCT_004", "판매 중이 아닌 상품입니다."),
 
+    // Cart
+    CART_EMPTY(HttpStatus.BAD_REQUEST, "CART_001", "주문할 장바구니 상품이 없습니다."),
+    INVALID_CART_ITEM_ID(HttpStatus.BAD_REQUEST, "CART_002", "장바구니 상품 ID가 올바르지 않습니다."),
+    CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_003", "장바구니 상품을 찾을 수 없습니다."),
+    FORBIDDEN_CART_ITEM(HttpStatus.FORBIDDEN, "CART_004", "본인 장바구니 상품만 주문할 수 있습니다."),
+
     // ── Payment ─────────────────────────────────────────────
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,          "PAYMENT_001", "결제 정보를 찾을 수 없습니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST,  "PAYMENT_002", "결제 금액이 일치하지 않습니다."),
