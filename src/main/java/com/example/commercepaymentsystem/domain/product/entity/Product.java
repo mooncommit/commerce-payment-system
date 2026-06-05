@@ -58,4 +58,14 @@ public class Product extends BaseEntity {
         }
         this.stockQuantity += quantity;
     }
+
+    // 상품 등록용 생성자
+    public Product(String categoryCode, String name, String description, Long price, Integer stockQuantity, SaleStatus saleStatus) {
+        this.categoryCode = categoryCode;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.saleStatus = saleStatus;
+    }
 }
