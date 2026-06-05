@@ -37,6 +37,8 @@ import java.util.UUID;
 public class OrderService {
 
     private static final DateTimeFormatter ORDER_NUMBER_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    // PG 결제 금액의 1% 적립
     private static final int EARN_POINT_RATE = 100;
 
     private final OrderRepository orderRepository;
@@ -55,7 +57,6 @@ public class OrderService {
     }
 
     // 상품 바로 주문 생성
-
     @Transactional
     public OrderCreateResponse createDirectOrder(Long memberId, OrderCreateRequest request) {
         // 주문, 주문상품, 재고 차감, 결제 대기 생성을 한 번에 진행
