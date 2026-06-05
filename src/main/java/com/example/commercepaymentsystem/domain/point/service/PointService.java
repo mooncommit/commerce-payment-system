@@ -73,13 +73,13 @@ public class PointService {
 
     //포인트 적립
     public void earnPoints(Payment payment) {
-        Long amount = payment.getEarnedPointAmount();
+        Long amount = payment.getOrder().getEarnedPointAmount();
 
         if (amount == null || amount == 0L) {
             return;
         }
 
-        Member member = findMember(payment.getMemberId());
+        Member member = findMember(payment.getOrder().getMember().getId());
 
         member.increasePoint(amount);
 
@@ -97,13 +97,13 @@ public class PointService {
 
     //포인트 사용
     public void usePoints(Payment payment) {
-        Long amount = payment.getUsedPointAmount();
+        Long amount = payment.getOrder().getUsedPointAmount();
 
         if (amount == null || amount == 0L) {
             return;
         }
 
-        Member member = findMember(payment.getMemberId());
+        Member member = findMember(payment.getOrder().getMember().getId());
 
         if (member.getPointBalance() < amount) {
             throw new BusinessException(ErrorCode.INSUFFICIENT_POINT);
@@ -125,13 +125,13 @@ public class PointService {
 
     //포인트 복구
     public void restoreUsedPoints(Payment payment) {
-        Long amount = payment.getUsedPointAmount();
+        Long amount = payment.getOrder().getUsedPointAmount();
 
         if (amount == null || amount == 0L) {
             return;
         }
 
-        Member member = findMember(payment.getMemberId());
+        Member member = findMember(payment.getOrder().getMember().getId());
 
         member.increasePoint(amount);
 
@@ -149,13 +149,13 @@ public class PointService {
 
     //포인트 회수
     public void revokeEarnedPoints(Payment payment) {
-        Long amount = payment.getEarnedPointAmount();
+        Long amount = payment.getOrder().getEarnedPointAmount();
 
         if (amount == null || amount == 0L) {
             return;
         }
 
-        Member member = findMember(payment.getMemberId());
+        Member member = findMember(payment.getOrder().getMember().getId());
 
         member.decreasePoint(amount);
 
