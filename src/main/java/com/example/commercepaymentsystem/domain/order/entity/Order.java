@@ -42,13 +42,16 @@ public class Order extends BaseEntity {
     @Column(nullable = false)
     private Long pgAmount;
 
+    @Column(nullable = false)
+    private Long earnedPointAmount;
+
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 
-    public static Order createPending(String orderNumber, Member member, Long totalAmount, Long usedPointAmount, Long pgAmount) {
+    public static Order createPending(String orderNumber, Member member, Long totalAmount, Long usedPointAmount, Long pgAmount, Long earnedPointAmount) {
         // 주문 생성 직후에는 결제 대기 상태로 저장
         Order order = new Order();
         order.orderNumber = orderNumber;
@@ -57,6 +60,7 @@ public class Order extends BaseEntity {
         order.totalAmount = totalAmount;
         order.usedPointAmount = usedPointAmount;
         order.pgAmount = pgAmount;
+        order.earnedPointAmount = earnedPointAmount;
         return order;
     }
 

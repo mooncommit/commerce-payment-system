@@ -9,9 +9,9 @@ import jakarta.validation.constraints.NotNull;
 @NoArgsConstructor
 public class PaymentConfirmRequest {
 
-    @NotNull(message = "주문 ID는 필수입니다")
-    Long orderId;
+    @NotNull(message = "결제 ID는 필수입니다")
+    private Long paymentId;
 
     @NotBlank(message = "PortOne 결제 ID는 필수입니다")
-    String portonePaymentId;
+    private String portonePaymentId;
 }

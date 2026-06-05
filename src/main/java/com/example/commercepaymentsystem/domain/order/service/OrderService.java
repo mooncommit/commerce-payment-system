@@ -37,6 +37,7 @@ import java.util.UUID;
 public class OrderService {
 
     private static final DateTimeFormatter ORDER_NUMBER_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final int EARN_POINT_RATE = 100;
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -45,7 +46,16 @@ public class OrderService {
     private final MemberRepository memberRepository;
     private final PaymentService paymentService;
 
+    public void confirmOrder(Order order) {
+        order.markAsConfirmed();
+    }
+
+    public void cancelOrder(Order order) {
+        order.markAsCancelled();
+    }
+
     // 상품 바로 주문 생성
+
     @Transactional
     public OrderCreateResponse createDirectOrder(Long memberId, OrderCreateRequest request) {
         // 주문, 주문상품, 재고 차감, 결제 대기 생성을 한 번에 진행
@@ -65,9 +75,10 @@ public class OrderService {
         validatePoint(member, usedPointAmount, totalAmount);
 
         Long pgAmount = totalAmount - usedPointAmount;
+        Long earnedPointAmount = calculateEarnedPointAmount(pgAmount);
 
         // 아직 결제되지 않은 주문 먼저 저장
-        Order order = Order.createPending(generateOrderNumber(), member, totalAmount, usedPointAmount, pgAmount);
+        Order order = Order.createPending(generateOrderNumber(), member, totalAmount, usedPointAmount, pgAmount, earnedPointAmount);
         Order savedOrder = orderRepository.save(order);
 
         OrderItem orderItem = OrderItem.create(savedOrder, product, request.getQuantity());
@@ -110,9 +121,10 @@ public class OrderService {
         validatePoint(member, usedPointAmount, totalAmount);
 
         Long pgAmount = totalAmount - usedPointAmount;
+        Long earnedPointAmount = calculateEarnedPointAmount(pgAmount);
 
         // 아직 결제되지 않은 주문 먼저 저장
-        Order order = Order.createPending(generateOrderNumber(), member, totalAmount, usedPointAmount, pgAmount);
+        Order order = Order.createPending(generateOrderNumber(), member, totalAmount, usedPointAmount, pgAmount, earnedPointAmount);
         Order savedOrder = orderRepository.save(order);
 
         // 장바구니 상품을 주문상품으로 옮기고 재고 먼저 차감
@@ -176,6 +188,10 @@ public class OrderService {
             throw new BusinessException(ErrorCode.FORBIDDEN_CART_ITEM);
         }
         return cartItems;
+    }
+
+    private Long calculateEarnedPointAmount(Long pgAmount) {
+        return pgAmount / EARN_POINT_RATE;
     }
 
     private Long calculateTotalAmount(List<CartItem> cartItems) {

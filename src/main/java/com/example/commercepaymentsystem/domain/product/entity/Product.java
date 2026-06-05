@@ -2,6 +2,8 @@ package com.example.commercepaymentsystem.domain.product.entity;
 
 import com.example.commercepaymentsystem.domain.product.enums.SaleStatus;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
+import com.example.commercepaymentsystem.global.exception.BusinessException;
+import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -47,5 +49,13 @@ public class Product extends BaseEntity {
     // 주문/재고 도메인에서 주문 생성 시 재고를 먼저 줄일 때 사용
     public void decreaseStock(Integer quantity) {
         this.stockQuantity -= quantity;
+    }
+
+    // 재고 복구 메서드
+    public void restoreStock(int quantity) {
+        if (quantity <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_QUANTITY);
+        }
+        this.stockQuantity += quantity;
     }
 }
