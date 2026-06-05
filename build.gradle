@@ -36,6 +36,7 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5' //Jwts , Claims 기본 인터페이스
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'// 실제 JWT 생성/검증 구현체
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5' // JSON 직렬화 처리
+    testRuntimeOnly 'com.h2database:h2'
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation 'org.springframework.boot:spring-boot-starter-security' //스프링세큐리티 의존성
 }
