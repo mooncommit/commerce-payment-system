@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - feature-ci/cd #테스트용
 
 jobs:
   deploy:
