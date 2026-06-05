@@ -7,7 +7,7 @@ package com.example.commercepaymentsystem.domain.payment.enums;
  * - COMPLETED → CANCELED: 결제 취소
  * - COMPLETED → REFUNDED: 환불 완료
  * - PENDING → FAILED   = 결제가 성공적으로 완료되지 못한 경우
- * - COMPLETED  → CANCELED  = 성공한 결제의 사후 취소 (환불)
+ * - COMPLETED  → CANCELED  = 성공한 결제의 사후 취소
  * - REFUNDED = 성공한 결제를 환불 완료한 경우
  */
 public enum PaymentStatus {
@@ -22,7 +22,7 @@ public enum PaymentStatus {
     COMPLETED {
         @Override
         public boolean canTransitTo(PaymentStatus target) {
-            return target == CANCELED;
+            return target == CANCELED || target == REFUNDED;
         }
     },
     // 결제 실패
