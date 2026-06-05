@@ -77,6 +77,10 @@ public class Payment extends BaseEntity {
         this.paidAt = LocalDateTime.now();
     }
 
+    public void markPaid() {
+        markPaid(null);
+    }
+
     public void markFailed(String failureReason) {
         changeStatus(PaymentStatus.FAILED);
         this.failureReason = failureReason;

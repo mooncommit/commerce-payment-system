@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
@@ -106,7 +105,7 @@ class PaymentFacadeTest {
     }
 
     @Test
-    void confirmPaymentThrowsPgCancelFailedWhenAmountMismatchCancelFails() {
+    void confirmPaymentFailsPaymentAndOrderBeforeThrowingWhenAmountMismatchCancelFails() {
         PaymentService paymentService = mock(PaymentService.class);
         PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
         PaymentGateway paymentGateway = mock(PaymentGateway.class);
@@ -131,8 +130,8 @@ class PaymentFacadeTest {
         );
 
         assertEquals(ErrorCode.PG_CANCEL_FAILED, exception.getErrorCode());
+        verify(paymentCommandService).failPaymentAndOrder(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
         verify(paymentGateway).cancelPayment("pay_test", "결제 금액 불일치 자동 취소");
-        verify(paymentCommandService, never()).failPaymentAndOrder(loginMember.getMemberId(), request, "결제 금액이 일치하지 않습니다.");
     }
 
     private static void setField(Object target, String fieldName, Object value) {
