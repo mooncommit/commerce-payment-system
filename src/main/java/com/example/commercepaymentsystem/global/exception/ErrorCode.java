@@ -40,6 +40,8 @@ public enum ErrorCode implements BaseCode {
     CART_EMPTY(HttpStatus.BAD_REQUEST, "CART_001", "장바구니가 비어있습니다."),
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_002", "장바구니 항목을 찾을 수 없습니다."),
     INVALID_CART_QUANTITY(HttpStatus.BAD_REQUEST, "CART_003", "장바구니 수량은 1 이상이어야 합니다."),
+    INVALID_CART_ITEM_ID(HttpStatus.BAD_REQUEST, "CART_004", "장바구니 상품 ID가 올바르지 않습니다."),
+    FORBIDDEN_CART_ITEM(HttpStatus.FORBIDDEN, "CART_005", "본인 장바구니 상품만 주문할 수 있습니다."),
 
     // ── POINT ──────────────────────────────────────────────
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "POINT_001", "포인트가 부족합니다."),
@@ -50,6 +52,7 @@ public enum ErrorCode implements BaseCode {
     INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_003", "주문 수량이 올바르지 않습니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "ORDER_004", "사용 포인트 금액이 올바르지 않습니다."),
     POINT_BALANCE_NOT_ENOUGH(HttpStatus.CONFLICT, "ORDER_005", "회원 포인트 잔액보다 사용 포인트 금액이 큽니다."),
+
 
     // ── Payment ─────────────────────────────────────────────
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,            "PAYMENT_001", "결제 정보를 찾을 수 없습니다."),
