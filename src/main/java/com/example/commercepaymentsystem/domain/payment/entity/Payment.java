@@ -42,6 +42,8 @@ public class Payment extends BaseEntity {
     @Column(name = "portone_payment_id", nullable = false, unique = true, length = 200)
     private String portonePaymentId;
 
+    private String portoneTransactionId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PaymentStatus status = PaymentStatus.PENDING;
@@ -69,8 +71,9 @@ public class Payment extends BaseEntity {
         return payment;
     }
 
-    public void markPaid() {
+    public void markPaid(String portoneTransactionId) {
         changeStatus(PaymentStatus.COMPLETED);
+        this.portoneTransactionId = portoneTransactionId;
         this.paidAt = LocalDateTime.now();
     }
 
