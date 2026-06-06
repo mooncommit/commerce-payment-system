@@ -74,7 +74,7 @@ public class PaymentCommandService {
 
     @Transactional
     public void processPaidWebhook(String portonePaymentId) {
-        Payment payment = paymentService.findByPortonePaymentIdForWebhook(portonePaymentId);
+        Payment payment = paymentService.findByPortonePaymentId(portonePaymentId);
         
         if (payment.getStatus() == PaymentStatus.COMPLETED) {
             return; // 멱등성: 이미 성공한 건은 무시
@@ -87,7 +87,7 @@ public class PaymentCommandService {
 
     @Transactional
     public void processFailedWebhook(String portonePaymentId, String failureReason) {
-        Payment payment = paymentService.findByPortonePaymentIdForWebhook(portonePaymentId);
+        Payment payment = paymentService.findByPortonePaymentId(portonePaymentId);
         
         if (payment.getStatus() == PaymentStatus.FAILED || payment.getStatus() == PaymentStatus.CANCELED) {
             return; // 멱등성: 이미 실패/취소된 건은 무시
