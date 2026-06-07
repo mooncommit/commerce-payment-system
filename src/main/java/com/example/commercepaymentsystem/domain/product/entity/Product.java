@@ -8,11 +8,15 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Getter
 @Table(name = "products")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class Product extends BaseEntity {
 
     @Id
@@ -59,16 +63,6 @@ public class Product extends BaseEntity {
         this.stockQuantity += quantity;
     }
 
-    // 상품 등록용 생성자
-    public Product(String categoryCode, String name, String description, Long price, Integer stockQuantity, SaleStatus saleStatus) {
-        this.categoryCode = categoryCode;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.stockQuantity = stockQuantity;
-        this.saleStatus = saleStatus;
-    }
-
     // 재고 차감 로직
     public void reduceStock(Integer quantity) {
         // 현재 재고가 요청 수량보다 적으면 예외 발생
@@ -78,16 +72,6 @@ public class Product extends BaseEntity {
 
         // 재고 차감
         this.stockQuantity -= quantity;
-    }
-
-    // 상품 등록용 생성자
-    public Product(String categoryCode, String name, String description, Long price, Integer stockQuantity, SaleStatus saleStatus) {
-        this.categoryCode = categoryCode;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.stockQuantity = stockQuantity;
-        this.saleStatus = saleStatus;
     }
 
     // 상품 수정용 생성자

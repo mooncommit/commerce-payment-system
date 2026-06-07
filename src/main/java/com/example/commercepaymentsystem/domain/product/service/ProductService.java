@@ -42,14 +42,16 @@ public class ProductService {
     // 상품 등록
     @Transactional
     public void createProduct(ProductRequest request) {
-        Product product = new Product(
-                request.getCategoryCode(),
-                request.getName(),
-                request.getDescription(),
-                request.getPrice(),
-                request.getStockQuantity(),
-                SaleStatus.ON_SALE // 기본값 설정
-        );
+        // 빌더 패턴 적용
+        Product product = Product.builder()
+                .categoryCode(request.getCategoryCode())
+                .name(request.getName())
+                .description(request.getDescription())
+                .price(request.getPrice())
+                .stockQuantity(request.getStockQuantity())
+                .saleStatus(SaleStatus.ON_SALE) // 기본값 설정
+                .build();
+
         productRepository.save(product);
     }
 
