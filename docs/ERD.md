@@ -2,6 +2,8 @@
 
 이 문서는 현재 코드의 JPA Entity를 기준으로 작성한 논리 ERD입니다.
 
+![Follow Payment System ERD](./images/erd-commerce-payment-system.png)
+
 ## Tables
 
 ### members
