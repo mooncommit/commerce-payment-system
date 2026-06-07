@@ -59,6 +59,16 @@ public class PaymentFacade {
             throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
 
-        return paymentCommandService.approvePaymentAndOrder(memberId, request);
+        try {
+            return paymentCommandService.approvePaymentAndOrder(memberId, request);
+        } catch (Exception e) {
+            log.error("DB 결제 상태 확정 중 에러 발생, PG 결제 자동 취소 진행: {}", portonePaymentId, e);
+            try {
+                paymentGateway.cancelPayment(portonePaymentId, "시스템 에러로 인한 결제 자동 취소");
+            } catch (Exception cancelEx) {
+                log.error("PG 결제 자동 취소 실패 - 수동 처리 필요: {}", portonePaymentId, cancelEx);
+            }
+            throw e;
+        }
     }
 }
