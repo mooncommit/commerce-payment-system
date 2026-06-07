@@ -13,6 +13,8 @@ import com.example.commercepaymentsystem.domain.order.dto.OrderDetailItemRespons
 import com.example.commercepaymentsystem.domain.order.dto.OrderDetailResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderItemResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderListResponse;
+import com.example.commercepaymentsystem.domain.order.dto.PreviewOrderItemResponse;
+import com.example.commercepaymentsystem.domain.order.dto.PreviewOrderResponse;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.order.entity.OrderItem;
 import com.example.commercepaymentsystem.domain.order.enums.OrderStatus;
@@ -89,6 +91,23 @@ public class OrderService {
                 orderPage.getTotalElements(),
                 orderPage.getTotalPages()
         );
+    }
+
+    // 주문서 미리보기
+    public PreviewOrderResponse previewOrder(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        List<CartItem> cartItems = cartItemRepository.findAllByMemberIdWithProduct(memberId);
+
+        if (cartItems.isEmpty()) {
+            throw new BusinessException(ErrorCode.CART_EMPTY);
+        }
+
+        List<PreviewOrderItemResponse> items = cartItems.stream()
+                .map(PreviewOrderItemResponse::from)
+                .toList();
+
+        return PreviewOrderResponse.from(items, member.getPointBalance());
     }
 
     // 내 주문 상세 조회

@@ -6,6 +6,7 @@ import com.example.commercepaymentsystem.domain.order.dto.OrderCreateRequest;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderDetailResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderListResponse;
+import com.example.commercepaymentsystem.domain.order.dto.PreviewOrderResponse;
 import com.example.commercepaymentsystem.domain.order.service.OrderService;
 import com.example.commercepaymentsystem.global.dto.PageResponse;
 import com.example.commercepaymentsystem.global.response.ApiResponse;
@@ -41,6 +42,17 @@ public class OrderController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success(response, "주문 내역 조회 성공"));
+    }
+
+    // 주문서 미리보기
+    @GetMapping("/preview")
+    public ResponseEntity<ApiResponse<PreviewOrderResponse>> previewOrder(
+            @AuthenticationPrincipal LoginMember loginMember
+    ) {
+        PreviewOrderResponse response = orderService.previewOrder(loginMember.getMemberId());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(response, "주문서 미리보기 조회 성공"));
     }
 
     // 내 주문 상세 조회
