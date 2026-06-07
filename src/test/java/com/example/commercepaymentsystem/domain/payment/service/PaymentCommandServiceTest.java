@@ -37,7 +37,7 @@ class PaymentCommandServiceTest {
         OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
         ProductRepository productRepository = mock(ProductRepository.class);
         PaymentService paymentService = new PaymentService(paymentRepository);
-        OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
+        OrderService orderService = new OrderService(null, null, null, null, null, paymentService, null);
         ProductService productService = new ProductService(productRepository);
         PaymentCommandService commandService = new PaymentCommandService(
                 paymentService,
@@ -81,7 +81,7 @@ class PaymentCommandServiceTest {
         OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
         ProductRepository productRepository = mock(ProductRepository.class);
         PaymentService paymentService = new PaymentService(paymentRepository);
-        OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
+        OrderService orderService = new OrderService(null, null, null, null, null, paymentService, null);
         ProductService productService = new ProductService(productRepository);
         PaymentCommandService commandService = new PaymentCommandService(
                 paymentService,
@@ -132,7 +132,7 @@ class PaymentCommandServiceTest {
         OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
         ProductRepository productRepository = mock(ProductRepository.class);
         PaymentService paymentService = new PaymentService(paymentRepository);
-        OrderService orderService = new OrderService(null, null, null, null, null, paymentService);
+        OrderService orderService = new OrderService(null, null, null, null, null, paymentService, null);
         ProductService productService = new ProductService(productRepository);
         PointService pointService = mock(PointService.class);
         RefundService refundService = mock(RefundService.class);
