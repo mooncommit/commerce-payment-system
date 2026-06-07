@@ -1,15 +1,18 @@
 package com.example.commercepaymentsystem.domain.product.service;
 
+import com.example.commercepaymentsystem.domain.product.dto.PageResponse;
+import com.example.commercepaymentsystem.domain.product.dto.ProductRequest;
 import com.example.commercepaymentsystem.domain.product.dto.ProductResponse;
 import com.example.commercepaymentsystem.domain.product.entity.Product;
+import com.example.commercepaymentsystem.domain.product.enums.SaleStatus;
 import com.example.commercepaymentsystem.domain.product.repository.ProductRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.commercepaymentsystem.domain.product.dto.ProductRequest;
-import com.example.commercepaymentsystem.domain.product.enums.SaleStatus;
 
 import java.util.List;
 
@@ -55,12 +58,10 @@ public class ProductService {
         productRepository.save(product);
     }
 
-    // 상품 전체 조회
-    public List<ProductResponse> findAllProducts() {
-        // 상품 전체 조회 후 DTO 리스트로 변환
-        return productRepository.findAll().stream()
-                .map(ProductResponse::from) //메서드 참조 방식
-                .toList();
+    // 전체 조회
+    public PageResponse<ProductResponse> findAllProducts(Pageable pageable) {
+        Page<Product> productPage = productRepository.findAll(pageable);
+        return PageResponse.of(productPage.map(ProductResponse::from));
     }
 
     // 상품 단 건 조회

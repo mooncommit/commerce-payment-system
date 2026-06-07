@@ -1,5 +1,6 @@
 package com.example.commercepaymentsystem.domain.product.controller;
 
+import com.example.commercepaymentsystem.domain.product.dto.PageResponse;
 import com.example.commercepaymentsystem.domain.product.dto.ProductRequest;
 import com.example.commercepaymentsystem.domain.product.dto.ProductResponse;
 import com.example.commercepaymentsystem.domain.product.service.ProductService;
@@ -24,8 +25,9 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getProducts() {
-        return ResponseEntity.ok(productService.findAllProducts());
+    public ResponseEntity<PageResponse<ProductResponse>> getProducts(
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(productService.findAllProducts(pageable));
     }
 
     // 상품 단 건 조회
