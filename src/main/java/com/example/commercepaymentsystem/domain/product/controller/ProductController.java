@@ -11,6 +11,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/products")
@@ -20,39 +21,39 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<Void> createProduct(@RequestBody ProductRequest requestDto) {
+    public ResponseEntity<ApiResponse<Void>> createProduct(@Valid @RequestBody ProductRequest requestDto) {
         productService.createProduct(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.ok(ApiResponse.success("상품 추가 성공"));
     }
 
-    // 전체조회
+    // 전체 조회
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getProducts(
             @PageableDefault(size = 10) Pageable pageable) {
-
         PageResponse<ProductResponse> response = productService.findAllProducts(pageable);
         return ResponseEntity.ok(ApiResponse.success(response, "상품 조회 성공"));
     }
 
-    // 상품 단 건 조회
-    @GetMapping("/{productId}") // 명세서에 맞게 {productId}로 변경
-    public ResponseEntity<ProductResponse> getProduct(@PathVariable Long productId) { // 변수명도 productId로 통일
-        return ResponseEntity.ok(productService.findProduct(productId));
+    // 단 건 조회
+    @GetMapping("/{productId}")
+    public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long productId) {
+        ProductResponse response = productService.findProduct(productId);
+        return ResponseEntity.ok(ApiResponse.success(response, "상품 조회 성공"));
     }
 
     // 상품 수정
     @PutMapping("/{productId}")
-    public ResponseEntity<Void> updateProduct(
+    public ResponseEntity<ApiResponse<Void>> updateProduct(
             @PathVariable Long productId,
-            @RequestBody ProductRequest requestDto) {
+            @Valid @RequestBody ProductRequest requestDto) {
         productService.updateProduct(productId, requestDto);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("상품 수정 성공"));
     }
 
     // 상품 삭제
     @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long productId) {
+    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long productId) {
         productService.deleteProduct(productId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("상품 삭제 성공"));
     }
 }
