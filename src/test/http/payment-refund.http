@@ -1,0 +1,16 @@
+### 1. 결제 환불(취소) 요청
+# 사전 조건: payment-confirm.http 에서 결제가 완료된 paymentId 가 존재해야 합니다.
+POST http://localhost:8080/api/payments/{{paymentId}}/refunds
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "reason": "단순 변심"
+}
+
+> {%
+    client.test("환불 응답 검증", function () {
+        client.assert(response.status === 200, "Expected 200 OK");
+        client.assert(response.body.data.paymentStatus === "REFUNDED" || response.body.data.paymentStatus === "CANCELED", "Status check");
+    });
+%}
