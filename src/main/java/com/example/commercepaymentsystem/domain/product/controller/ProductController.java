@@ -1,15 +1,16 @@
 package com.example.commercepaymentsystem.domain.product.controller;
 
-import com.example.commercepaymentsystem.domain.product.dto.PageResponse;
 import com.example.commercepaymentsystem.domain.product.dto.ProductRequest;
 import com.example.commercepaymentsystem.domain.product.dto.ProductResponse;
 import com.example.commercepaymentsystem.domain.product.service.ProductService;
+import com.example.commercepaymentsystem.global.response.ApiResponse; // 공통 응답 포맷
+import com.example.commercepaymentsystem.global.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
@@ -24,10 +25,13 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    // 전체조회
     @GetMapping
-    public ResponseEntity<PageResponse<ProductResponse>> getProducts(
+    public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getProducts(
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(productService.findAllProducts(pageable));
+
+        PageResponse<ProductResponse> response = productService.findAllProducts(pageable);
+        return ResponseEntity.ok(ApiResponse.success(response, "상품 조회 성공"));
     }
 
     // 상품 단 건 조회

@@ -1,11 +1,11 @@
 package com.example.commercepaymentsystem.domain.product.service;
 
-import com.example.commercepaymentsystem.domain.product.dto.PageResponse;
 import com.example.commercepaymentsystem.domain.product.dto.ProductRequest;
 import com.example.commercepaymentsystem.domain.product.dto.ProductResponse;
 import com.example.commercepaymentsystem.domain.product.entity.Product;
 import com.example.commercepaymentsystem.domain.product.enums.SaleStatus;
 import com.example.commercepaymentsystem.domain.product.repository.ProductRepository;
+import com.example.commercepaymentsystem.global.dto.PageResponse; // 글로벌 DTO 사용
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -61,7 +61,18 @@ public class ProductService {
     // 전체 조회
     public PageResponse<ProductResponse> findAllProducts(Pageable pageable) {
         Page<Product> productPage = productRepository.findAll(pageable);
-        return PageResponse.of(productPage.map(ProductResponse::from));
+
+        List<ProductResponse> content = productPage.getContent().stream()
+                .map(ProductResponse::from)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.getTotalElements(),
+                productPage.getTotalPages()
+        );
     }
 
     // 상품 단 건 조회
