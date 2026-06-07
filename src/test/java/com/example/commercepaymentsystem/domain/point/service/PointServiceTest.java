@@ -210,6 +210,72 @@ class PointServiceTest {
         then(pointRepository).should(never()).save(any(Point.class));
     }
 
+    @Test
+    void 환불_시_사용_포인트를_복구하면_양수_원장이_저장된다() {
+        // given
+        Long memberId = 1L;
+
+        Member member = new Member(
+                "test@test.com",
+                "encodedPassword",
+                "테스트회원",
+                "01012345678"
+        );
+        ReflectionTestUtils.setField(member, "id", memberId);
+        ReflectionTestUtils.setField(member, "pointBalance", 2000L);
+
+        Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
+
+        given(memberRepository.findByIdForUpdate(memberId))
+                .willReturn(Optional.of(member));
+
+        // when
+        pointService.restoreUsedPoints(payment);
+
+        // then
+        assertThat(member.getPointBalance()).isEqualTo(5000L);
+        then(pointRepository).should().save(argThat(point ->
+                point.getMemberId().equals(memberId)
+                        && point.getPaymentId().equals(10L)
+                        && point.getPointType() == PointType.REFUND
+                        && point.getAmount().equals(3000L)
+                        && point.getBalanceAfter().equals(5000L)
+        ));
+    }
+
+    @Test
+    void 환불_시_적립_포인트를_회수하면_음수_원장이_저장된다() {
+        // given
+        Long memberId = 1L;
+
+        Member member = new Member(
+                "test@test.com",
+                "encodedPassword",
+                "테스트회원",
+                "01012345678"
+        );
+        ReflectionTestUtils.setField(member, "id", memberId);
+        ReflectionTestUtils.setField(member, "pointBalance", 5300L);
+
+        Payment payment = paymentWithOrder(10L, member, 0L, 300L);
+
+        given(memberRepository.findByIdForUpdate(memberId))
+                .willReturn(Optional.of(member));
+
+        // when
+        pointService.revokeEarnedPoints(payment);
+
+        // then
+        assertThat(member.getPointBalance()).isEqualTo(5000L);
+        then(pointRepository).should().save(argThat(point ->
+                point.getMemberId().equals(memberId)
+                        && point.getPaymentId().equals(10L)
+                        && point.getPointType() == PointType.REVOKE
+                        && point.getAmount().equals(-300L)
+                        && point.getBalanceAfter().equals(5000L)
+        ));
+    }
+
     private Payment paymentWithOrder(Long paymentId, Member member, Long usedPointAmount, Long earnedPointAmount) {
         Order order = newEntity(Order.class);
         ReflectionTestUtils.setField(order, "member", member);
