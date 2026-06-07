@@ -6,17 +6,14 @@ import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 
 @Entity
 @Getter
 @Table(name = "products")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class Product extends BaseEntity {
 
     @Id
@@ -41,6 +38,20 @@ public class Product extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "sale_status", nullable = false, length = 30)
     private SaleStatus saleStatus;
+
+    /**
+     * 상품 생성을 위한 빌더 생성자
+     * @param saleStatus 판매 상태 (입력되지 않을 경우 기본값 ON_SALE 적용)
+     */
+    @Builder
+    public Product(String categoryCode, String name, String description, Long price, Integer stockQuantity, SaleStatus saleStatus) {
+        this.categoryCode = categoryCode;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.saleStatus = saleStatus != null ? saleStatus : SaleStatus.ON_SALE;
+    }
 
     public boolean isOnSale() {
         return saleStatus == SaleStatus.ON_SALE;
