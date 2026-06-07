@@ -68,4 +68,33 @@ public class Product extends BaseEntity {
         this.stockQuantity = stockQuantity;
         this.saleStatus = saleStatus;
     }
+
+    // 재고 차감 로직
+    public void reduceStock(Integer quantity) {
+        // 현재 재고가 요청 수량보다 적으면 예외 발생
+        if (this.stockQuantity < quantity) {
+            throw new BusinessException(ErrorCode.OUT_OF_STOCK); // 재고 부족 에러
+        }
+
+        // 재고 차감
+        this.stockQuantity -= quantity;
+    }
+
+    // 상품 등록용 생성자
+    public Product(String categoryCode, String name, String description, Long price, Integer stockQuantity, SaleStatus saleStatus) {
+        this.categoryCode = categoryCode;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.saleStatus = saleStatus;
+    }
+
+    // 상품 수정용 생성자
+    public void updateProduct(String name, String description, Long price, Integer stockQuantity) {
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+    }
 }

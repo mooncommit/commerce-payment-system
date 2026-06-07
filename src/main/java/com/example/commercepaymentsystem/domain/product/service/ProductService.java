@@ -12,7 +12,6 @@ import com.example.commercepaymentsystem.domain.product.dto.ProductRequest;
 import com.example.commercepaymentsystem.domain.product.enums.SaleStatus;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +28,15 @@ public class ProductService {
     @Transactional
     public void restoreStock(Product product, Integer quantity) {
         product.restoreStock(quantity);
+    }
+
+    @Transactional
+    public void deductStock(Long productId, Integer quantity) {
+        // 조회: 상품이 없으면 findProductEntity 내부에서 PRODUCT_NOT_FOUND 예외 발생
+        Product product = findProductEntity(productId);
+
+        // 실행: 엔티티의 규칙(reduceStock)을 호출
+        product.reduceStock(quantity);
     }
 
     // 상품 등록
@@ -58,6 +66,27 @@ public class ProductService {
         // 상품을 조회하고, DTO로 변환하여 반환
         Product product = findProductEntity(productId);
         return ProductResponse.from(product);
+    }
+
+    // 상품 수정
+    @Transactional
+    public void updateProduct(Long productId, ProductRequest request) {
+        Product product = findProductEntity(productId);
+
+        product.updateProduct(
+                request.getName(),
+                request.getDescription(),
+                request.getPrice(),
+                request.getStockQuantity()
+        );
+    }
+
+    // 상품 삭제
+    @Transactional
+    public void deleteProduct(Long productId) {
+
+        Product product = findProductEntity(productId);
+        productRepository.delete(product);
     }
 
 }
