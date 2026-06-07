@@ -36,8 +36,10 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/auth/signup",
                                         "/api/auth/login",
-                                        "/api/auth/reissue"
-//                                "/actuator/health"
+                                        "/api/auth/reissue",
+                                        "/api/webhooks/portone",
+                                        "/actuator/health",
+                                        "/actuator/health/**"
                                 ).permitAll()
 
                                 .anyRequest().authenticated()
@@ -51,4 +53,3 @@ public class SecurityConfig {
                 .build();
     }
 }
-
