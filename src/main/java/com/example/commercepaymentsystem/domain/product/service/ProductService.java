@@ -98,9 +98,10 @@ public class ProductService {
     // 상품 삭제
     @Transactional
     public void deleteProduct(Long productId) {
-
         Product product = findProductEntity(productId);
-        productRepository.delete(product);
+
+        // 삭제 로직 변경: 물리적 삭제 대신 Soft Delete 적용
+        product.markAsDeleted();
     }
 
 }

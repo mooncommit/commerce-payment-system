@@ -55,6 +55,10 @@ public class Product extends BaseEntity {
         this.stockQuantity -= quantity;
     }
 
+    public void markAsDeleted() {
+        this.saleStatus = SaleStatus.DELETED; // 만약 DELETED 상태가 없다면 END_OF_SALE 사용
+    }
+
     // 재고 복구 메서드
     public void restoreStock(int quantity) {
         if (quantity <= 0) {
