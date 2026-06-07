@@ -33,4 +33,20 @@ public class ProductController {
     public ResponseEntity<ProductResponse> getProduct(@PathVariable Long productId) { // 변수명도 productId로 통일
         return ResponseEntity.ok(productService.findProduct(productId));
     }
+
+    // 상품 수정
+    @PutMapping("/{productId}")
+    public ResponseEntity<Void> updateProduct(
+            @PathVariable Long productId,
+            @RequestBody ProductRequest requestDto) {
+        productService.updateProduct(productId, requestDto);
+        return ResponseEntity.noContent().build();
+    }
+
+    // 상품 삭제
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long productId) {
+        productService.deleteProduct(productId);
+        return ResponseEntity.noContent().build();
+    }
 }
