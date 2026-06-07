@@ -7,7 +7,10 @@ import com.example.commercepaymentsystem.domain.member.repository.MemberReposito
 import com.example.commercepaymentsystem.domain.order.dto.CartOrderCreateRequest;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateRequest;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateResponse;
+import com.example.commercepaymentsystem.domain.order.dto.OrderDetailItemResponse;
+import com.example.commercepaymentsystem.domain.order.dto.OrderDetailResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderItemResponse;
+import com.example.commercepaymentsystem.domain.order.dto.OrderListResponse;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.order.entity.OrderItem;
 import com.example.commercepaymentsystem.domain.order.repository.OrderItemRepository;
@@ -15,11 +18,17 @@ import com.example.commercepaymentsystem.domain.order.repository.OrderRepository
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
+import com.example.commercepaymentsystem.domain.payment.repository.PaymentRepository;
 import com.example.commercepaymentsystem.domain.product.entity.Product;
 import com.example.commercepaymentsystem.domain.product.repository.ProductRepository;
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
+import com.example.commercepaymentsystem.global.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +56,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
     private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
 
     public void confirmOrder(Order order) {
         order.markAsConfirmed();
@@ -54,6 +64,47 @@ public class OrderService {
 
     public void cancelOrder(Order order) {
         order.markAsCancelled();
+    }
+
+    // 내 주문 내역 조회
+    public PageResponse<OrderListResponse> getOrders(Long memberId, int page, int size) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt")
+                .and(Sort.by(Sort.Direction.DESC, "id"));
+        Pageable pageable = PageRequest.of(page - 1, size, sort);
+
+        Page<Order> orderPage = orderRepository.findByMemberId(memberId, pageable);
+
+        List<OrderListResponse> content = orderPage.getContent()
+                .stream()
+                .map(OrderListResponse::from)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                orderPage.getNumber() + 1,
+                orderPage.getSize(),
+                orderPage.getTotalElements(),
+                orderPage.getTotalPages()
+        );
+    }
+
+    // 내 주문 상세 조회
+    public OrderDetailResponse getOrderDetail(Long memberId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getMember().getId().equals(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ORDER);
+        }
+
+        Payment payment = paymentRepository.findByOrderIdWithOrder(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+        List<OrderDetailItemResponse> items = orderItemRepository.findAllByOrder_Id(orderId)
+                .stream()
+                .map(OrderDetailItemResponse::from)
+                .toList();
+
+        return OrderDetailResponse.from(order, payment, items);
     }
 
     // 상품 바로 주문 생성
@@ -91,17 +142,10 @@ public class OrderService {
         // 결제 대기 데이터는 결제 담당 서비스에 요청
         Payment payment = paymentService.createPendingPayment(savedOrder, PaymentMethodType.CARD);
 
-        return new OrderCreateResponse(
-                savedOrder.getId(),
-                savedOrder.getOrderNumber(),
-                payment.getId(),
-                payment.getPortonePaymentId(),
-                savedOrder.getOrderStatus(),
-                payment.getStatus().name(),
-                savedOrder.getTotalAmount(),
-                savedOrder.getUsedPointAmount(),
-                savedOrder.getPgAmount(),
-                List.of(toOrderItemResponse(savedOrderItem))
+        return OrderCreateResponse.from(
+                savedOrder,
+                payment,
+                List.of(OrderItemResponse.from(savedOrderItem))
         );
     }
 
@@ -145,18 +189,11 @@ public class OrderService {
         // 결제 대기 데이터는 결제 담당 서비스에 요청
         Payment payment = paymentService.createPendingPayment(savedOrder, PaymentMethodType.CARD);
 
-        return new OrderCreateResponse(
-                savedOrder.getId(),
-                savedOrder.getOrderNumber(),
-                payment.getId(),
-                payment.getPortonePaymentId(),
-                savedOrder.getOrderStatus(),
-                payment.getStatus().name(),
-                savedOrder.getTotalAmount(),
-                savedOrder.getUsedPointAmount(),
-                savedOrder.getPgAmount(),
+        return OrderCreateResponse.from(
+                savedOrder,
+                payment,
                 savedOrderItems.stream()
-                        .map(this::toOrderItemResponse)
+                        .map(OrderItemResponse::from)
                         .toList()
         );
     }
@@ -232,17 +269,6 @@ public class OrderService {
         if (member.getPointBalance() < usedPointAmount) {
             throw new BusinessException(ErrorCode.POINT_BALANCE_NOT_ENOUGH);
         }
-    }
-
-    private OrderItemResponse toOrderItemResponse(OrderItem orderItem) {
-        return new OrderItemResponse(
-                orderItem.getId(),
-                orderItem.getProduct().getId(),
-                orderItem.getProductName(),
-                orderItem.getUnitPrice(),
-                orderItem.getQuantity(),
-                orderItem.getLineTotalAmount()
-        );
     }
 
     private String generateOrderNumber() {

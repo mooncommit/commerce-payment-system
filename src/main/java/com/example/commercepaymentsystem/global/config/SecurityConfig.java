@@ -37,8 +37,9 @@ public class SecurityConfig {
                                         "/api/auth/signup",
                                         "/api/auth/login",
                                         "/api/auth/reissue",
-                                        "/api/webhooks/portone"
-//                                "/actuator/health"
+                                        "/api/webhooks/portone",
+                                        "/actuator/health",
+                                        "/actuator/health/**"
                                 ).permitAll()
 
                                 .anyRequest().authenticated()
