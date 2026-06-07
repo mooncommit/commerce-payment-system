@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class OrderItemResponse {
+public class OrderDetailItemResponse {
 
     private Long orderItemId;
     private Long productId;
@@ -15,8 +15,8 @@ public class OrderItemResponse {
     private Integer quantity;
     private Long lineTotalAmount;
 
-    public static OrderItemResponse from(OrderItem orderItem) {
-        return new OrderItemResponse(
+    public static OrderDetailItemResponse from(OrderItem orderItem) {
+        return new OrderDetailItemResponse(
                 orderItem.getId(),
                 orderItem.getProduct().getId(),
                 orderItem.getProductName(),
