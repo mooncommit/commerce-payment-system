@@ -75,6 +75,19 @@ public class PaymentService {
         return payment;
     }
 
+    @Transactional
+    public Payment findByIdWithOrder(Long paymentId) {
+        return paymentRepository.findByIdWithOrder(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
+    // 웹훅에서 수신한 PortOne 쪽 paymentId, 즉 portonePaymentId 기반으로 Payment 조회
+    @Transactional
+    public Payment findByPortonePaymentId(String portonePaymentId) {
+        return paymentRepository.findByPortonePaymentId(portonePaymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
     /**
      * 결제 상태를 완료로 변경한다.
      *
@@ -82,10 +95,21 @@ public class PaymentService {
      */
     @Transactional
     public void markPaid(Payment payment) {
+        markPaid(payment, null);
+    }
+
+    /**
+     * 결제 상태를 완료로 변경하고 PG 거래 ID를 저장한다.
+     *
+     * @param payment 상태를 바꿀 결제
+     * @param portoneTransactionId PG 거래 ID
+     */
+    @Transactional
+    public void markPaid(Payment payment, String portoneTransactionId) {
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
-        payment.markPaid();
+        payment.markPaid(portoneTransactionId);
     }
 
     /**

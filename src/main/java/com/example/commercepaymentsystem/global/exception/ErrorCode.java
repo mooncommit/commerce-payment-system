@@ -40,13 +40,20 @@ public enum ErrorCode implements BaseCode {
     CART_EMPTY(HttpStatus.BAD_REQUEST, "CART_001", "장바구니가 비어있습니다."),
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_002", "장바구니 항목을 찾을 수 없습니다."),
     INVALID_CART_QUANTITY(HttpStatus.BAD_REQUEST, "CART_003", "장바구니 수량은 1 이상이어야 합니다."),
+    INVALID_CART_ITEM_ID(HttpStatus.BAD_REQUEST, "CART_004", "장바구니 상품 ID가 올바르지 않습니다."),
+    FORBIDDEN_CART_ITEM(HttpStatus.FORBIDDEN, "CART_005", "본인 장바구니 상품만 주문할 수 있습니다."),
 
-    // ── Order ──────────────────────────────────────────────
+    // ── POINT ──────────────────────────────────────────────
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "POINT_001", "포인트가 부족합니다."),
+
+    // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001", "주문을 찾을 수 없습니다."),
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "ORDER_002", "유효하지 않은 주문 상태 변경입니다."),
     INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_003", "주문 수량이 올바르지 않습니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "ORDER_004", "사용 포인트 금액이 올바르지 않습니다."),
     POINT_BALANCE_NOT_ENOUGH(HttpStatus.CONFLICT, "ORDER_005", "회원 포인트 잔액보다 사용 포인트 금액이 큽니다."),
+    FORBIDDEN_ORDER(HttpStatus.FORBIDDEN, "ORDER_006", "본인 주문만 조회할 수 있습니다."),
+
 
     // ── Payment ─────────────────────────────────────────────
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,            "PAYMENT_001", "결제 정보를 찾을 수 없습니다."),
@@ -66,8 +73,8 @@ public enum ErrorCode implements BaseCode {
 
     // ── Webhook ─────────────────────────────────────────────
     INVALID_WEBHOOK_SIGNATURE(HttpStatus.UNAUTHORIZED, "WEBHOOK_001", "웹훅 서명이 유효하지 않습니다."),
-    WEBHOOK_PAYMENT_ID_MISSING(HttpStatus.BAD_REQUEST, "WEBHOOK_002", "portonePaymentId를 가져올 수 없습니다.");
-
+    WEBHOOK_PAYMENT_ID_MISSING(HttpStatus.BAD_REQUEST, "WEBHOOK_002", "portonePaymentId를 가져올 수 없습니다."),
+    WEBHOOK_EVENT_NOT_FOUND(HttpStatus.NOT_FOUND,      "WEBHOOK_003", "웹훅 이벤트를 찾을 수 없습니다.");
 
     private final HttpStatus status;  // HTTP 상태 코드
     private final String code;        // 커스텀 에러 코드 (예: "COMMON_001")
