@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 내역 - Follow Commerce</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="page-container">
+        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">주문 내역</h2>
+        <div id="loading" style="text-align: center; padding: 40px;">불러오는 중...</div>
+        
+        <div id="ordersContainer" style="display: none; flex-direction: column; gap: 20px;">
+            <!-- Orders will be injected here -->
+        </div>
+
+        <div id="noOrders" style="text-align: center; padding: 60px 0; color: var(--color-text-muted); display: none;">
+            <p>주문 내역이 없습니다.</p>
+            <button class="btn-black" style="margin-top: 20px; padding: 12px 24px;" onclick="window.location.href='/index.html'">쇼핑 계속하기</button>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script src="orders.js"></script>
+</body>
+</html>
