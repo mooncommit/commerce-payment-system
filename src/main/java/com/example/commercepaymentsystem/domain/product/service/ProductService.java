@@ -35,8 +35,9 @@ public class ProductService {
 
     @Transactional
     public void deductStock(Long productId, Integer quantity) {
-        // 조회: 상품이 없으면 findProductEntity 내부에서 PRODUCT_NOT_FOUND 예외 발생
-        Product product = findProductEntity(productId);
+        // 조회: 락을 걸고 상품 조회
+        Product product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         // 실행: 엔티티의 규칙(reduceStock)을 호출
         product.reduceStock(quantity);
