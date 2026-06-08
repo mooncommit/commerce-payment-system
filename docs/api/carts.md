@@ -32,7 +32,7 @@ POST /api/carts/items
   "data": {
     "cartItemId": 1,
     "productId": 10,
-    "poductName": "무선 키보드",
+    "productName": "무선 키보드",
     "price": 30000,
     "quantity": 2,
     "totalAmount": 60000
