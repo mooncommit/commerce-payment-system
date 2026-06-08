@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/carts")
@@ -29,11 +30,14 @@ public class CartController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<CartItemResponse>> getCartItems(
-            @PageableDefault(size = 10) Pageable pageable) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long memberId = (Long) auth.getPrincipal();
-        return ResponseEntity.ok(cartService.getCartItems(memberId, pageable));
+    public ResponseEntity<ApiResponse<Page<CartItemResponse>>> getCartItems(
+            @AuthenticationPrincipal Long memberId,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<CartItemResponse> response = cartService.getCartItems(memberId, pageable);
+
+        // 두 번째 인자로 메시지를 넣어주면 해결됩니다!
+        return ResponseEntity.ok(ApiResponse.success(response, "장바구니 목록 조회 성공"));
     }
 
     // 수량 변경
