@@ -47,29 +47,35 @@ class PointServiceTest {
     private PointService pointService;
 
     @Test
-    void getMyPointReturnsCurrentBalance() {
+    void 포인트_잔액을_조회한다() {
+        // given
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
 
+        //when
         GetMyPointResponse response = pointService.getMyPoint(memberId);
 
+        //then
         assertThat(response.getPointBalance()).isEqualTo(5000L);
     }
 
     @Test
-    void getMyPointThrowsWhenMemberNotFound() {
+    void 존재하지_않는_회원이면_예외가_발생한다() {
+        //given
         Long memberId = 999L;
 
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
 
+        //when.then
         assertThatThrownBy(() -> pointService.getMyPoint(memberId))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
-    void getMyHistoryReturnsPagedPointLedger() {
+    void 포인트_거래내역을_페이징_조회한다() {
+        //given
         Long memberId = 1L;
         int page = 1;
         int size = 10;
@@ -101,7 +107,7 @@ class PointServiceTest {
     }
 
     @Test
-    void isPointBalanceConsistentReturnsTrueWhenSnapshotMatchesLedgerSum() {
+    void 포인트_스냅샷과_원장합계가_같으면_true를_반환한다() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
 
@@ -114,7 +120,7 @@ class PointServiceTest {
     }
 
     @Test
-    void validatePointBalanceConsistencyThrowsWhenSnapshotDoesNotMatchLedgerSum() {
+    void 포인트_스냅샷과_원장합계가_다르면_예외가_발생한다() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
 
@@ -126,7 +132,7 @@ class PointServiceTest {
     }
 
     @Test
-    void usePointsDecreasesBalanceAndSavesUseLedger() {
+    void 포인트를_사용하면_잔액이_감소하고_사용_원장이_저장된다() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
@@ -147,7 +153,7 @@ class PointServiceTest {
     }
 
     @Test
-    void usePointsDoesNothingWhenIdempotencyKeyAlreadyExists() {
+    void 포인트_사용_멱등키가_이미_존재하면_아무것도_하지않는다() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
@@ -162,7 +168,7 @@ class PointServiceTest {
     }
 
     @Test
-    void earnPointsIncreasesBalanceAndSavesEarnLedger() {
+    void 포인트를_적립하면_잔액이_증가하고_적립_원장이_저장된다() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 0L, 300L);
@@ -183,7 +189,7 @@ class PointServiceTest {
     }
 
     @Test
-    void usePointsThrowsWhenBalanceIsNotEnough() {
+    void 포인트_사용시_잔액이_부족하면_예외가_발생한다() {
         Long memberId = 1L;
         Member member = member(memberId, 1000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
@@ -198,7 +204,7 @@ class PointServiceTest {
     }
 
     @Test
-    void restoreUsedPointsRestoresBalanceAndSavesRefundLedgerWithRefundIdempotencyKey() {
+    void 사용_포인트를_복원하면_잔액이_증가하고_환불_원장이_저장된다() {
         Long memberId = 1L;
         Long refundId = 20L;
         Member member = member(memberId, 2000L);
@@ -220,7 +226,7 @@ class PointServiceTest {
     }
 
     @Test
-    void revokeEarnedPointsDecreasesBalanceAndSavesRevokeLedgerWithRefundIdempotencyKey() {
+    void 적립_포인트를_회수하면_잔액이_감소하고_회수_원장이_저장된다() {
         Long memberId = 1L;
         Long refundId = 20L;
         Member member = member(memberId, 5000L);

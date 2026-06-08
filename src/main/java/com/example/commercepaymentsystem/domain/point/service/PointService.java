@@ -64,7 +64,6 @@ public class PointService {
         );
     }
 
-    // 회원 스냅샷 잔액과 포인트 원장 합계가 같은지 검증합니다.
     @Transactional(readOnly = true)
     public boolean isPointBalanceConsistent(Long memberId) {
         Member member = memberRepository.findById(memberId)
@@ -74,6 +73,8 @@ public class PointService {
         return member.getPointBalance().equals(ledgerBalance);
     }
 
+
+    //잔액과 스냅샷이 다를시 예외발생
     @Transactional(readOnly = true)
     public void validatePointBalanceConsistency(Long memberId) {
         if (!isPointBalanceConsistent(memberId)) {
@@ -81,10 +82,11 @@ public class PointService {
         }
     }
 
-    // 결제 완료 후 적립 포인트를 지급합니다.
+
+    //결제완료후 포인트지급
     @Transactional
     public void earnPoints(Payment payment) {
-        validatePayment(payment);
+        validatePaymentPointRequest(payment);
 
         Long amount = payment.getOrder().getEarnedPointAmount();
         if (amount == 0L) {
@@ -96,7 +98,7 @@ public class PointService {
             return;
         }
 
-        Member member = findMember(payment.getOrder().getMember().getId());
+        Member member = findMemberForPointUpdate(payment);
         if (pointRepository.existsByIdempotencyKey(key)) {
             return;
         }
@@ -106,10 +108,10 @@ public class PointService {
     }
 
 
-    // 결제 완료 후 포인트를 차감하고 사용 원장을 기록합니다.
+    //결제완료후 사용포인트차감
     @Transactional
     public void usePoints(Payment payment) {
-        validatePayment(payment);
+        validatePaymentPointRequest(payment);
 
         Long amount = payment.getOrder().getUsedPointAmount();
         if (amount == 0L) {
@@ -121,7 +123,7 @@ public class PointService {
             return;
         }
 
-        Member member = findMember(payment.getOrder().getMember().getId());
+        Member member = findMemberForPointUpdate(payment);
         if (pointRepository.existsByIdempotencyKey(key)) {
             return;
         }
@@ -134,7 +136,7 @@ public class PointService {
     }
 
 
-    // 환불 시 사용 포인트를 복구하고 멱등키로 중복 복구를 막습니다.
+    //환불포인트복구
     @Transactional
     public void restoreUsedPoints(Payment payment, Long refundId) {
         validateRefundPointRequest(payment, refundId);
@@ -149,7 +151,7 @@ public class PointService {
             return;
         }
 
-        Member member = findMember(payment.getOrder().getMember().getId());
+        Member member = findMemberForPointUpdate(payment);
         if (pointRepository.existsByIdempotencyKey(key)) {
             return;
         }
@@ -159,7 +161,7 @@ public class PointService {
     }
 
 
-    // 환불 완료 후 지급된 적립 포인트를 회수합니다.
+    //환불포인트회수
     @Transactional
     public void revokeEarnedPoints(Payment payment, Long refundId) {
         validateRefundPointRequest(payment, refundId);
@@ -174,7 +176,7 @@ public class PointService {
             return;
         }
 
-        Member member = findMember(payment.getOrder().getMember().getId());
+        Member member = findMemberForPointUpdate(payment);
         if (pointRepository.existsByIdempotencyKey(key)) {
             return;
         }
@@ -204,14 +206,17 @@ public class PointService {
         pointRepository.save(point);
     }
 
+    //환불처리에 포인트값이 유효한지확인
     private void validateRefundPointRequest(Payment payment, Long refundId) {
-        validatePayment(payment);
+        validatePaymentPointRequest(payment);
         if (refundId == null) {
             throw new BusinessException(ErrorCode.INVALID_POINT_REQUEST);
         }
     }
 
-    private void validatePayment(Payment payment) {
+
+    //결제 기반 포인트 처리에 필요한 스냅샷 값이 유효한지 검증
+    private void validatePaymentPointRequest(Payment payment) {
         if (payment == null
                 || payment.getId() == null
                 || payment.getOrder() == null
@@ -222,14 +227,22 @@ public class PointService {
             throw new BusinessException(ErrorCode.INVALID_POINT_REQUEST);
         }
 
-        if (payment.getOrder().getUsedPointAmount() < 0
-                || payment.getOrder().getEarnedPointAmount() < 0) {
+        validatePointAmount(payment.getOrder().getUsedPointAmount());
+        validatePointAmount(payment.getOrder().getEarnedPointAmount());
+    }
+
+
+    //포인트 스냅샷금액은 음수로 될수없다
+    private void validatePointAmount(Long amount) {
+        if (amount < 0) {
             throw new BusinessException(ErrorCode.INVALID_POINT_AMOUNT);
         }
     }
 
-    // 포인트 잔액을 변경하는 동안에는 회원 row에 비관적 락을 겁니다.
-    private Member findMember(Long memberId) {
+
+    //한건만 진행할수있도록 비관락적용
+    private Member findMemberForPointUpdate(Payment payment) {
+        Long memberId = payment.getOrder().getMember().getId();
         return memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
     }
