@@ -1,0 +1,27 @@
+### 1. 회원가입
+POST http://localhost:8080/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "password123",
+  "name": "홍길동",
+  "phoneNumber": "010-1111-1111"
+}
+
+###
+
+### 2. 로그인 (토큰 발급)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "password123"
+}
+
+> {%
+    // 발급받은 토큰을 전역 변수 'token'에 저장하여 다른 파일에서도 사용할 수 있게 합니다.
+    client.global.set("token", response.body.data.accessToken);
+    client.log("Token saved: " + client.global.get("token"));
+%}

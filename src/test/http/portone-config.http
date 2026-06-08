@@ -1,0 +1,11 @@
+### 1. 포트원 프론트엔드 설정 정보 조회
+# 로그인 없이 누구나 호출할 수 있는 공용 API입니다.
+GET http://localhost:8080/api/config/portone
+
+> {%
+    client.test("설정값 수신 완료", function () {
+        client.assert(response.status === 200, "Expected 200 OK");
+        client.assert(response.body.data.storeId != null, "Store ID must exist");
+        client.assert(response.body.data.channelKey != null, "Channel Key must exist");
+    });
+%}

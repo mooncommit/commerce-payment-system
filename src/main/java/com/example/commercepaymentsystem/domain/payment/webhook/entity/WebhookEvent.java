@@ -1,7 +1,7 @@
-package com.example.commercepaymentsystem.infra.portone.webhook.entity;
+package com.example.commercepaymentsystem.domain.payment.webhook.entity;
 
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
-import com.example.commercepaymentsystem.infra.portone.webhook.enums.WebhookStatus;
+import com.example.commercepaymentsystem.domain.payment.webhook.enums.WebhookStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

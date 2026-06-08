@@ -39,3 +39,7 @@ out/
 
 ### macOS 메타 파일 ###
 .DS_Store
+
+
+### Local environment ###
+.env
