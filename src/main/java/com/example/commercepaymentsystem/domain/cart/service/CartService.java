@@ -1,7 +1,7 @@
 package com.example.commercepaymentsystem.domain.cart.service;
 
+import com.example.commercepaymentsystem.domain.cart.dto.CartItemResponse; // 추가됨
 import com.example.commercepaymentsystem.domain.cart.dto.CartResponse;
-import com.example.commercepaymentsystem.domain.cart.dto.CartResponse.CartItemResponse;
 import com.example.commercepaymentsystem.domain.cart.entity.Cart;
 import com.example.commercepaymentsystem.domain.cart.entity.CartItem;
 import com.example.commercepaymentsystem.domain.cart.repository.CartItemRepository;
@@ -14,6 +14,8 @@ import com.example.commercepaymentsystem.domain.product.repository.ProductReposi
 import com.example.commercepaymentsystem.global.exception.BusinessException;
 import com.example.commercepaymentsystem.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class CartService {
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
 
+    // 장바구니 상품 추가
     @Transactional
     public void addItem(Long memberId, Long productId, int quantity) {
         if (quantity <= 0) {
@@ -57,31 +60,6 @@ public class CartService {
                                 .quantity(quantity)
                                 .build())
                 );
-    }
-
-    public CartResponse getCart(Long memberId) {
-
-        Cart cart = cartRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
-
-
-        if (cart.getCartItems().isEmpty()) {
-            throw new BusinessException(ErrorCode.CART_EMPTY);
-        }
-
-        List<CartItemResponse> itemResponses = cart.getCartItems().stream()
-                .map(item -> CartItemResponse.builder()
-                        .productId(item.getProduct().getId())
-                        .productName(item.getProduct().getName())
-                        .price(item.getProduct().getPrice())
-                        .quantity(item.getQuantity())
-                        .build())
-                .toList();
-
-        return CartResponse.builder()
-                .cartId(cart.getId())
-                .items(itemResponses)
-                .build();
     }
 
     // 장바구니 상품 수량 변경
@@ -118,12 +96,20 @@ public class CartService {
         Cart cart = cartRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
 
-        // 장바구니에 있는 아이템 중, 주문할 아이템 ID 목록에 해당하는 것만 필터링
         return cart.getCartItems().stream()
                 .filter(item -> cartItemIds.contains(item.getId()))
                 .filter(item -> !item.isDeleted())
                 .toList();
     }
 
+    // 장바구니 상품 목록을 조회
+    @Transactional(readOnly = true)
+    public Page<CartItemResponse> getCartItems(Long memberId, Pageable pageable) {
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
 
+        // 내부 클래스인 CartItemResponse.from을 호출하도록 맞춤
+        return cartItemRepository.findByCartIdAndDeletedFalse(cart.getId(), pageable)
+                .map(CartItemResponse::from);
+    }
 }
