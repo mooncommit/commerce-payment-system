@@ -58,4 +58,8 @@ public class CartItem extends BaseEntity {
     public boolean isDeleted() {
         return this.deleted;
     }
+
+    public void restore() {
+        this.deleted = false;
+    }
 }

@@ -42,7 +42,6 @@ public class CartController {
             @AuthenticationPrincipal Long memberId,
             @PathVariable Long productId,
             @RequestParam int quantity) {
-
         cartService.updateQuantity(memberId, productId, quantity);
         return ResponseEntity.ok().build();
     }
@@ -52,7 +51,6 @@ public class CartController {
     public ResponseEntity<Void> removeItem(
             @AuthenticationPrincipal Long memberId,
             @PathVariable Long productId) {
-
         cartService.removeItem(memberId, productId);
         return ResponseEntity.ok().build();
     }

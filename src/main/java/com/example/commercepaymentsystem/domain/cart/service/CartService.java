@@ -52,8 +52,13 @@ public class CartService {
 
         cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
                 .ifPresentOrElse(
-                        cartItem -> cartItem.addQuantity(quantity),
-                        () -> cartItemRepository.save(CartItem.builder()
+                        cartItem -> {
+                            if (cartItem.isDeleted()) {
+                                cartItem.restore(); // 삭제된 상태라면 복구
+                            }
+                            cartItem.addQuantity(quantity);
+                        },
+                        () -> cartItemRepository.save(CartItem.builder() // 신규 생성
                                 .cart(cart)
                                 .product(product)
                                 .quantity(quantity)
