@@ -1,0 +1,75 @@
+### 1. 상품 등록
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "categoryCode": "FOOD",
+  "name": "스페셜 원두 커피",
+  "description": "향긋한 스페셜티 원두 200g",
+  "price": 18000,
+  "stockQuantity": 50
+}
+
+> {%
+    client.test("상품 생성 성공", function () {
+        client.assert(response.status === 201 || response.status === 200, "Expected 200 or 201");
+    });
+%}
+
+###
+
+### 2. 전체 상품 목록 조회
+GET http://localhost:8080/api/products
+
+> {%
+    client.test("목록 조회 성공", function () {
+        client.assert(response.status === 200, "Expected 200 OK");
+        client.assert(response.body.data.length > 0, "Should have at least 1 product");
+    });
+%}
+
+###
+
+### 3. 단건 상품 상세 조회
+GET http://localhost:8080/api/products/1
+
+> {%
+    client.test("단건 조회 성공", function () {
+        client.assert(response.status === 200, "Expected 200 OK");
+        client.assert(response.body.data.id === 1, "Product ID should be 1");
+    });
+%}
+
+###
+
+### 4. 상품 정보 수정
+PUT http://localhost:8080/api/products/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "categoryCode": "FOOD",
+  "name": "디카페인 원두 커피",
+  "description": "밤에도 마실 수 있는 디카페인 200g",
+  "price": 20000,
+  "stockQuantity": 100
+}
+
+> {%
+    client.test("수정 성공", function () {
+        client.assert(response.status === 204 || response.status === 200, "Expected 200 or 204");
+    });
+%}
+
+###
+
+### 5. 상품 삭제
+DELETE http://localhost:8080/api/products/1
+Authorization: Bearer {{token}}
+
+> {%
+    client.test("삭제 성공", function () {
+        client.assert(response.status === 204 || response.status === 200, "Expected 200 or 204");
+    });
+%}

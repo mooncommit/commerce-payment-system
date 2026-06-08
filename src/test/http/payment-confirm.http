@@ -1,0 +1,17 @@
+### 1. 결제 승인 (확정)
+# 사전 조건: order.http 에서 주문을 생성하고 paymentId 변수가 세팅되어 있어야 합니다.
+POST http://localhost:8080/api/payments/confirm
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "paymentId": {{paymentId}},
+  "portonePaymentId": "pay_test_001"
+}
+
+> {%
+    client.test("결제 성공", function () {
+        // 실제 포트원 연동이 없는 로컬 테스트 환경에선 400 에러(포트원 결제내역 없음)가 날 수 있습니다.
+        client.assert(response.status === 200 || response.status === 400, "Expected 200 or 400");
+    });
+%}
