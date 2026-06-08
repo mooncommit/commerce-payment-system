@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/carts")
@@ -34,4 +35,27 @@ public class CartController {
         Long memberId = (Long) auth.getPrincipal();
         return ResponseEntity.ok(cartService.getCartItems(memberId, pageable));
     }
+
+    // 수량 변경
+    @PatchMapping("/items/{productId}")
+    public ResponseEntity<Void> updateQuantity(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long productId,
+            @RequestParam int quantity) {
+
+        cartService.updateQuantity(memberId, productId, quantity);
+        return ResponseEntity.ok().build();
+    }
+
+    // 상품 삭제
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<Void> removeItem(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long productId) {
+
+        cartService.removeItem(memberId, productId);
+        return ResponseEntity.ok().build();
+    }
+
+
 }
