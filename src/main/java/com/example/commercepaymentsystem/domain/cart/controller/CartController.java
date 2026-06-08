@@ -2,6 +2,7 @@ package com.example.commercepaymentsystem.domain.cart.controller;
 
 import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.cart.dto.CartItemResponse;
+import com.example.commercepaymentsystem.domain.cart.dto.CartItemQuantityUpdateRequest;
 import com.example.commercepaymentsystem.domain.cart.service.CartService;
 import com.example.commercepaymentsystem.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -47,21 +49,21 @@ public class CartController {
     }
 
     @PatchMapping("/items/{productId}")
-    public ResponseEntity<Void> updateQuantity(
+    public ApiResponse<Void> updateQuantity(
             @AuthenticationPrincipal LoginMember loginMember,
             @PathVariable Long productId,
-            @RequestParam int quantity
+            @RequestBody CartItemQuantityUpdateRequest request
     ) {
-        cartService.updateQuantity(loginMember.getMemberId(), productId, quantity);
-        return ResponseEntity.ok().build();
+        cartService.updateQuantity(loginMember.getMemberId(), productId, request.getQuantity());
+        return ApiResponse.success("수량이 변경되었습니다.");
     }
 
     @DeleteMapping("/items/{productId}")
-    public ResponseEntity<Void> removeItem(
+    public ApiResponse<Void> removeItem(
             @AuthenticationPrincipal LoginMember loginMember,
             @PathVariable Long productId
     ) {
         cartService.removeItem(loginMember.getMemberId(), productId);
-        return ResponseEntity.ok().build();
+        return ApiResponse.success("장바구니에서 상품이 삭제되었습니다.");
     }
 }
