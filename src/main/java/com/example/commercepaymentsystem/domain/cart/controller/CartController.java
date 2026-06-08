@@ -39,27 +39,28 @@ public class CartController {
 
     // 수량 변경
     @PatchMapping("/items/{cartItemId}")
-    public ResponseEntity<Void> updateQuantity(
+    public ResponseEntity<ApiResponse<Void>> updateQuantity(
             @AuthenticationPrincipal LoginMember loginMember,
             @PathVariable Long cartItemId,
             @RequestBody com.example.commercepaymentsystem.domain.cart.dto.CartUpdateRequest request) {
         cartService.updateQuantity(loginMember.getMemberId(), cartItemId, request.getQuantity());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success("수량이 변경되었습니다."));
     }
 
     // 상품 삭제
     @DeleteMapping("/items/{cartItemId}")
-    public ResponseEntity<Void> removeItem(
+    public ResponseEntity<ApiResponse<Void>> removeItem(
             @AuthenticationPrincipal LoginMember loginMember,
             @PathVariable Long cartItemId) {
         cartService.removeItem(loginMember.getMemberId(), cartItemId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success("장바구니에서 상품이 삭제되었습니다."));
     }
 
     // 전체 비우기
     @DeleteMapping
-    public ResponseEntity<Void> clearCart(@AuthenticationPrincipal LoginMember loginMember) {
+    public ResponseEntity<ApiResponse<Void>> clearCart(
+            @AuthenticationPrincipal LoginMember loginMember) {
         cartService.clearCart(loginMember.getMemberId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success("장바구니를 비웠습니다."));
     }
 }
