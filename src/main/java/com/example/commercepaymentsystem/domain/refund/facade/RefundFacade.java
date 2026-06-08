@@ -2,6 +2,7 @@ package com.example.commercepaymentsystem.domain.refund.facade;
 
 import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
+import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.domain.payment.port.PaymentGateway;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentCommandService;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 전액 환불 요청을 처리하는 최상위 퍼사드(Facade) 컴포넌트.
- * 환불 이력 생성, 외부 API(포트원 PG 취소) 통신, 내부 DB 후처리의 순서를 제어한다.
+ * 환불 이력 생성, 내부 DB 후처리, 외부 API(포트원 PG 취소) 통신의 순서를 제어한다.
  */
 @Component
 @RequiredArgsConstructor
@@ -39,12 +40,12 @@ public class RefundFacade {
      * <ol>
      *     <li>환불 대상 결제를 조회하고 회원/상태를 검증한다.</li>
      *     <li>Refund를 REQUESTED 상태로 먼저 저장해 환불 시도 이력을 남긴다.</li>
+     *     <li>결제/주문/재고/포인트를 정리하고 Refund를 COMPLETED로 변경한다.</li>
      *     <li>포트원 PG 취소를 호출한다.</li>
-     *     <li>PG 취소가 성공하면 결제/주문/재고/포인트를 정리하고 Refund를 COMPLETED로 변경한다.</li>
-     *     <li>PG 취소가 실패하면 Refund를 FAILED로 변경하고 결제/주문 상태는 그대로 둔다.</li>
+     *     <li>PG 취소가 실패하면 이미 커밋된 DB 상태를 유지하고 로그로 후속 처리 단서를 남긴다.</li>
      * </ol>
      *
-     * <p>이렇게 남긴 REQUESTED/FAILED 상태는 PG 통신 실패나 후처리 실패 건을 운영자가 추적하는 단서가 된다.
+     * <p>외부 호출은 DB 후처리 트랜잭션 밖에서 수행해 DB 락이 PG 응답을 기다리지 않게 한다.
      */
     public RefundResponse requestRefund(LoginMember loginMember, Long paymentId, RefundRequest request) {
         Long memberId = loginMember.getMemberId();
@@ -60,17 +61,16 @@ public class RefundFacade {
         }
 
         Refund requestedRefund = refundService.createRefund(payment, reason);
-
-        try {
-            paymentGateway.cancelPayment(payment.getPortonePaymentId(), reason);
-        } catch (Exception e) {
-            refundService.markFailed(requestedRefund.getId());
-            log.error("PG 환불 실패: Refund FAILED 처리 완료. refundId={}, portonePaymentId={}",
-                    requestedRefund.getId(), payment.getPortonePaymentId(), e);
-            throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
-        }
-
         Refund completedRefund = paymentCommandService.refundPaymentAndOrder(paymentId, requestedRefund.getId());
+
+        if (requiresPgCancel(payment)) {
+            try {
+                paymentGateway.cancelPayment(payment.getPortonePaymentId(), reason);
+            } catch (Exception e) {
+                log.error("PG 환불 실패: DB 환불 후처리 커밋 완료, PG 후속 정합화 필요. refundId={}, portonePaymentId={}",
+                        requestedRefund.getId(), payment.getPortonePaymentId(), e);
+            }
+        }
 
         return RefundResponse.from(completedRefund);
     }
@@ -83,5 +83,12 @@ public class RefundFacade {
             return DEFAULT_REFUND_REASON;
         }
         return request.getReason();
+    }
+
+    private boolean requiresPgCancel(Payment payment) {
+        Long pgAmount = payment.getOrder().getPgAmount();
+        return payment.getPaymentMethodType() != PaymentMethodType.POINT_ONLY
+                && pgAmount != null
+                && pgAmount > 0;
     }
 }

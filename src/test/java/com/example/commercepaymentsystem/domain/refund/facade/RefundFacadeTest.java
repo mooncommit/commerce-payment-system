@@ -4,6 +4,7 @@ import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.member.entity.Member;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
+import com.example.commercepaymentsystem.domain.payment.enums.PaymentMethodType;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
 import com.example.commercepaymentsystem.domain.payment.port.PaymentGateway;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentCommandService;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.when;
 class RefundFacadeTest {
 
     @Test
-    void requestRefundCreatesRequestedRefundBeforePgCancelAndCompletesAfterPgSuccess() {
+    void requestRefundCompletesInternalStateChangesBeforePgCancel() {
         PaymentService paymentService = mock(PaymentService.class);
         PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
         RefundService refundService = mock(RefundService.class);
@@ -53,14 +54,14 @@ class RefundFacadeTest {
 
         assertEquals(1L, response.getPaymentId());
         assertEquals(RefundStatus.COMPLETED, response.getRefundStatus());
-        InOrder inOrder = inOrder(refundService, paymentGateway, paymentCommandService);
+        InOrder inOrder = inOrder(refundService, paymentCommandService, paymentGateway);
         inOrder.verify(refundService).createRefund(payment, "단순 변심");
-        inOrder.verify(paymentGateway).cancelPayment("pay_test", "단순 변심");
         inOrder.verify(paymentCommandService).refundPaymentAndOrder(1L, 2L);
+        inOrder.verify(paymentGateway).cancelPayment("pay_test", "단순 변심");
     }
 
     @Test
-    void requestRefundMarksRefundFailedWhenPgCancelFailsAndSkipsInternalStateChanges() {
+    void requestRefundKeepsCompletedInternalStateWhenPgCancelFailsAfterCommit() {
         PaymentService paymentService = mock(PaymentService.class);
         PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
         RefundService refundService = mock(RefundService.class);
@@ -68,24 +69,50 @@ class RefundFacadeTest {
         RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, refundService, paymentGateway);
         Payment payment = completedPayment(1L, 10L, "pay_test");
         Refund requestedRefund = refund(2L, payment, "단순 변심");
+        Refund completedRefund = refund(2L, payment, "단순 변심");
+        completedRefund.markAsCompleted();
         LoginMember loginMember = new LoginMember(10L, "member@example.com");
 
         when(paymentService.findByIdWithOrder(1L)).thenReturn(payment);
         when(refundService.createRefund(payment, "단순 변심")).thenReturn(requestedRefund);
+        when(paymentCommandService.refundPaymentAndOrder(1L, 2L)).thenReturn(completedRefund);
         doThrow(new RuntimeException("cancel failed"))
                 .when(paymentGateway)
                 .cancelPayment("pay_test", "단순 변심");
 
-        BusinessException exception = assertThrows(
-                BusinessException.class,
-                () -> refundFacade.requestRefund(loginMember, 1L, new RefundRequest("단순 변심"))
-        );
+        RefundResponse response = refundFacade.requestRefund(loginMember, 1L, new RefundRequest("단순 변심"));
 
-        assertEquals(ErrorCode.PG_CANCEL_FAILED, exception.getErrorCode());
-        verify(refundService).createRefund(payment, "단순 변심");
-        verify(refundService).markFailed(2L);
-        verify(paymentGateway).cancelPayment("pay_test", "단순 변심");
-        verify(paymentCommandService, never()).refundPaymentAndOrder(1L, 2L);
+        assertEquals(RefundStatus.COMPLETED, response.getRefundStatus());
+        InOrder inOrder = inOrder(refundService, paymentCommandService, paymentGateway);
+        inOrder.verify(refundService).createRefund(payment, "단순 변심");
+        inOrder.verify(paymentCommandService).refundPaymentAndOrder(1L, 2L);
+        inOrder.verify(paymentGateway).cancelPayment("pay_test", "단순 변심");
+        verify(refundService, never()).markFailed(2L);
+    }
+
+    @Test
+    void requestRefundSkipsPgCancelForPointOnlyPaymentAndCompletesInternalStateChanges() {
+        PaymentService paymentService = mock(PaymentService.class);
+        PaymentCommandService paymentCommandService = mock(PaymentCommandService.class);
+        RefundService refundService = mock(RefundService.class);
+        PaymentGateway paymentGateway = mock(PaymentGateway.class);
+        RefundFacade refundFacade = new RefundFacade(paymentService, paymentCommandService, refundService, paymentGateway);
+        Payment payment = completedPayment(1L, 10L, "pay_test");
+        setField(payment, "paymentMethodType", PaymentMethodType.POINT_ONLY);
+        Refund requestedRefund = refund(2L, payment, "단순 변심");
+        Refund completedRefund = refund(2L, payment, "단순 변심");
+        completedRefund.markAsCompleted();
+        LoginMember loginMember = new LoginMember(10L, "member@example.com");
+
+        when(paymentService.findByIdWithOrder(1L)).thenReturn(payment);
+        when(refundService.createRefund(payment, "단순 변심")).thenReturn(requestedRefund);
+        when(paymentCommandService.refundPaymentAndOrder(1L, 2L)).thenReturn(completedRefund);
+
+        RefundResponse response = refundFacade.requestRefund(loginMember, 1L, new RefundRequest("단순 변심"));
+
+        assertEquals(RefundStatus.COMPLETED, response.getRefundStatus());
+        verify(paymentGateway, never()).cancelPayment("pay_test", "단순 변심");
+        verify(paymentCommandService).refundPaymentAndOrder(1L, 2L);
     }
 
     @Test
@@ -149,6 +176,7 @@ class RefundFacadeTest {
         setField(payment, "order", order);
         setField(payment, "portonePaymentId", portonePaymentId);
         setField(payment, "status", PaymentStatus.COMPLETED);
+        setField(payment, "paymentMethodType", PaymentMethodType.CARD);
         return payment;
     }
 

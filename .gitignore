@@ -38,5 +38,7 @@ out/
 
 ### macOS 메타 파일 ###
 .DS_Store
-### Environment Variables ###
+
+
+### Local environment ###
 .env
