@@ -32,7 +32,7 @@ public class RefundController {
         RefundResponse response = refundFacade.requestRefund(loginMember, paymentId, request);
 
         return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "환불 요청 생성 성공"));
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(response, "전체 환불 성공"));
     }
 }

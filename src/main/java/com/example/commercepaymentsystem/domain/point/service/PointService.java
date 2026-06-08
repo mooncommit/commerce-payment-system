@@ -163,7 +163,7 @@ public class PointService {
                 member.getId(),
                 payment.getId(),
                 PointType.REVOKE,
-                amount,
+                -amount,
                 member.getPointBalance(),
                 "적립 포인트 회수"
         );
