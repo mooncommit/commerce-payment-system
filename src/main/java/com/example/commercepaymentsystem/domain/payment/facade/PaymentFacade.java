@@ -37,6 +37,12 @@ public class PaymentFacade {
         PaymentConfirmResponse readyPayment = paymentService.confirmPayment(memberId, request);
         String portonePaymentId = request.getPortonePaymentId();
 
+        // PG 결제 금액이 0원인 경우(전액 포인트 결제), PortOne 조회를 생략하고 바로 승인 처리
+        if (readyPayment.getPgAmount() == 0) {
+            log.info("PG 결제 금액 0원 - PortOne 조회 생략: paymentId={}", readyPayment.getPaymentId());
+            return paymentCommandService.approvePaymentAndOrder(memberId, request);
+        }
+
         PaymentGatewayResponse pgPayment = paymentGateway.getPayment(portonePaymentId);
 
         if (!PG_STATUS_PAID.equals(pgPayment.status())) {

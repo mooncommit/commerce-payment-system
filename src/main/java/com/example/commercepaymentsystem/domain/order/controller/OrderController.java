@@ -90,4 +90,16 @@ public class OrderController {
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "상품 바로 주문 및 결제 대기 생성 성공"));
     }
+
+    // 장바구니에서 주문할 때 주문과 결제 대기 데이터 함께 생성
+    @PostMapping("/cart")
+    public ResponseEntity<ApiResponse<OrderCreateResponse>> createCartOrder(
+            @AuthenticationPrincipal LoginMember loginMember,
+            @Valid @RequestBody com.example.commercepaymentsystem.domain.order.dto.CartOrderCreateRequest request
+    ) {
+        OrderCreateResponse response = orderService.createCartOrder(loginMember.getMemberId(), request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "장바구니 주문 및 결제 대기 생성 성공"));
+    }
 }

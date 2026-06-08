@@ -1,5 +1,6 @@
 package com.example.commercepaymentsystem.domain.cart.controller;
 
+import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.cart.dto.CartItemResponse;
 import com.example.commercepaymentsystem.domain.cart.service.CartService;
 import com.example.commercepaymentsystem.global.response.ApiResponse;
@@ -8,10 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Sort;
 
 @RestController
@@ -22,42 +21,45 @@ public class CartController {
     private final CartService cartService;
 
     @PostMapping("/items")
-    public ApiResponse<Void> addItem(@RequestParam Long productId, @RequestParam int quantity) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long memberId = (Long) auth.getPrincipal();
-        cartService.addItem(memberId, productId, quantity);
+    public ApiResponse<Void> addItem(
+            @AuthenticationPrincipal LoginMember loginMember,
+            @RequestBody com.example.commercepaymentsystem.domain.cart.dto.CartAddRequest request) {
+        cartService.addItem(loginMember.getMemberId(), request.getProductId(), request.getQuantity());
         return ApiResponse.success("장바구니에 상품이 담겼습니다.");
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CartItemResponse>>> getCartItems(
-            @AuthenticationPrincipal Long memberId,
+            @AuthenticationPrincipal LoginMember loginMember,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<CartItemResponse> response = cartService.getCartItems(memberId, pageable);
-
-        // 두 번째 인자로 메시지를 넣어주면 해결됩니다!
+        Page<CartItemResponse> response = cartService.getCartItems(loginMember.getMemberId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(response, "장바구니 목록 조회 성공"));
     }
 
     // 수량 변경
-    @PatchMapping("/items/{productId}")
+    @PatchMapping("/items/{cartItemId}")
     public ResponseEntity<Void> updateQuantity(
-            @AuthenticationPrincipal Long memberId,
-            @PathVariable Long productId,
-            @RequestParam int quantity) {
-        cartService.updateQuantity(memberId, productId, quantity);
+            @AuthenticationPrincipal LoginMember loginMember,
+            @PathVariable Long cartItemId,
+            @RequestBody com.example.commercepaymentsystem.domain.cart.dto.CartUpdateRequest request) {
+        cartService.updateQuantity(loginMember.getMemberId(), cartItemId, request.getQuantity());
         return ResponseEntity.ok().build();
     }
 
     // 상품 삭제
-    @DeleteMapping("/items/{productId}")
+    @DeleteMapping("/items/{cartItemId}")
     public ResponseEntity<Void> removeItem(
-            @AuthenticationPrincipal Long memberId,
-            @PathVariable Long productId) {
-        cartService.removeItem(memberId, productId);
+            @AuthenticationPrincipal LoginMember loginMember,
+            @PathVariable Long cartItemId) {
+        cartService.removeItem(loginMember.getMemberId(), cartItemId);
         return ResponseEntity.ok().build();
     }
 
-
+    // 전체 비우기
+    @DeleteMapping
+    public ResponseEntity<Void> clearCart(@AuthenticationPrincipal LoginMember loginMember) {
+        cartService.clearCart(loginMember.getMemberId());
+        return ResponseEntity.ok().build();
+    }
 }
