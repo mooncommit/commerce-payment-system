@@ -52,6 +52,10 @@ public class PaymentCommandService {
         paymentService.markPaid(payment);
         orderService.confirmOrder(payment.getOrder());
 
+        // 결제 성공이 확인된 후 포인트 사용/적립 원장을 멱등하게 반영합니다.
+        pointService.usePoints(payment);
+        pointService.earnPoints(payment);
+
         return paymentService.toConfirmResponse(payment);
     }
 
@@ -83,6 +87,10 @@ public class PaymentCommandService {
 
         paymentService.markPaid(payment);
         orderService.confirmOrder(payment.getOrder());
+
+        // 멱등키가 있어 먼저 처리된 쪽만 잔액을 바꿉니다.
+        pointService.usePoints(payment);
+        pointService.earnPoints(payment);
     }
 
     @Transactional
@@ -132,8 +140,10 @@ public class PaymentCommandService {
         payment.markRefunded();
         orderService.cancelOrder(payment.getOrder());
         restoreStock(payment.getOrder());
-        pointService.restoreUsedPoints(payment);
-        pointService.revokeEarnedPoints(payment);
+
+        // 환불 원장은 멱등키를 사용해 같은 환불의 포인트 복구/회수를 한 번만 반영합니다.
+        pointService.restoreUsedPoints(payment, refundId);
+        pointService.revokeEarnedPoints(payment, refundId);
 
         return refundService.markCompleted(refundId);
     }
