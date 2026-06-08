@@ -5,14 +5,19 @@ import com.example.commercepaymentsystem.domain.cart.repository.CartItemReposito
 import com.example.commercepaymentsystem.domain.member.entity.Member;
 import com.example.commercepaymentsystem.domain.member.repository.MemberRepository;
 import com.example.commercepaymentsystem.domain.order.dto.CartOrderCreateRequest;
+import com.example.commercepaymentsystem.domain.order.dto.OrderCancelItemResponse;
+import com.example.commercepaymentsystem.domain.order.dto.OrderCancelResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateRequest;
 import com.example.commercepaymentsystem.domain.order.dto.OrderCreateResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderDetailItemResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderDetailResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderItemResponse;
 import com.example.commercepaymentsystem.domain.order.dto.OrderListResponse;
+import com.example.commercepaymentsystem.domain.order.dto.PreviewOrderItemResponse;
+import com.example.commercepaymentsystem.domain.order.dto.PreviewOrderResponse;
 import com.example.commercepaymentsystem.domain.order.entity.Order;
 import com.example.commercepaymentsystem.domain.order.entity.OrderItem;
+import com.example.commercepaymentsystem.domain.order.enums.OrderStatus;
 import com.example.commercepaymentsystem.domain.order.repository.OrderItemRepository;
 import com.example.commercepaymentsystem.domain.order.repository.OrderRepository;
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
@@ -88,14 +93,29 @@ public class OrderService {
         );
     }
 
+    // 주문서 미리보기
+    public PreviewOrderResponse previewOrder(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        List<CartItem> cartItems = cartItemRepository.findAllByMemberIdWithProduct(memberId);
+
+        if (cartItems.isEmpty()) {
+            throw new BusinessException(ErrorCode.CART_EMPTY);
+        }
+
+        List<PreviewOrderItemResponse> items = cartItems.stream()
+                .map(PreviewOrderItemResponse::from)
+                .toList();
+
+        return PreviewOrderResponse.from(items, member.getPointBalance());
+    }
+
     // 내 주문 상세 조회
     public OrderDetailResponse getOrderDetail(Long memberId, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
-        if (!order.getMember().getId().equals(memberId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN_ORDER);
-        }
+        validateOrderOwner(order, memberId);
 
         Payment payment = paymentRepository.findByOrderIdWithOrder(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
@@ -105,6 +125,30 @@ public class OrderService {
                 .toList();
 
         return OrderDetailResponse.from(order, payment, items);
+    }
+
+    // 결제대기 주문 취소
+    @Transactional
+    public OrderCancelResponse cancelPendingOrder(Long memberId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        validateOrderOwner(order, memberId);
+        validateCancelableOrder(order);
+
+        Payment payment = paymentRepository.findByOrderIdWithOrder(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+        List<OrderItem> orderItems = orderItemRepository.findAllByOrder_Id(orderId);
+
+        paymentService.markFailed(payment, "결제대기 주문 취소");
+        order.markAsCancelled();
+        restoreStock(orderItems);
+
+        List<OrderCancelItemResponse> restoredItems = orderItems.stream()
+                .map(OrderCancelItemResponse::from)
+                .toList();
+
+        return OrderCancelResponse.from(order, payment, restoredItems);
     }
 
     // 상품 바로 주문 생성
@@ -268,6 +312,32 @@ public class OrderService {
         }
         if (member.getPointBalance() < usedPointAmount) {
             throw new BusinessException(ErrorCode.POINT_BALANCE_NOT_ENOUGH);
+        }
+    }
+
+    private void validateOrderOwner(Order order, Long memberId) {
+        // 본인 주문만 조회하거나 취소 가능
+        if (!order.getMember().getId().equals(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ORDER);
+        }
+    }
+
+    private void validateCancelableOrder(Order order) {
+        // 이미 취소된 주문은 다시 취소 불가
+        if (order.getOrderStatus() == OrderStatus.CANCELED) {
+            throw new BusinessException(ErrorCode.ORDER_ALREADY_CANCELED);
+        }
+
+        // 결제대기 상태가 아닌 주문은 주문 취소 API로 취소 불가
+        if (order.getOrderStatus() != OrderStatus.PAYMENT_PENDING) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_CANCELABLE);
+        }
+    }
+
+    private void restoreStock(List<OrderItem> orderItems) {
+        // 주문 생성 때 먼저 줄였던 재고를 다시 복구
+        for (OrderItem orderItem : orderItems) {
+            orderItem.getProduct().restoreStock(orderItem.getQuantity());
         }
     }
 

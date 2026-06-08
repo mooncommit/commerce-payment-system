@@ -53,6 +53,8 @@ public enum ErrorCode implements BaseCode {
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "ORDER_004", "사용 포인트 금액이 올바르지 않습니다."),
     POINT_BALANCE_NOT_ENOUGH(HttpStatus.CONFLICT, "ORDER_005", "회원 포인트 잔액보다 사용 포인트 금액이 큽니다."),
     FORBIDDEN_ORDER(HttpStatus.FORBIDDEN, "ORDER_006", "본인 주문만 조회할 수 있습니다."),
+    ORDER_NOT_CANCELABLE(HttpStatus.CONFLICT, "ORDER_007", "결제대기 상태가 아닌 주문은 취소할 수 없습니다."),
+    ORDER_ALREADY_CANCELED(HttpStatus.CONFLICT, "ORDER_008", "이미 취소된 주문입니다."),
 
 
     // ── Payment ─────────────────────────────────────────────
