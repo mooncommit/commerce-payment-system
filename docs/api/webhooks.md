@@ -3,7 +3,7 @@
 ## PortOne 결제 상태 변경 웹훅 수신
 
 ```http
-POST /api/webhooks/portone
+POST /api/payments/webhooks/portone
 ```
 
 ### Headers
