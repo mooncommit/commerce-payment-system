@@ -1,7 +1,6 @@
 package com.example.commercepaymentsystem.domain.cart.service;
 
-import com.example.commercepaymentsystem.domain.cart.dto.CartItemResponse; // 추가됨
-import com.example.commercepaymentsystem.domain.cart.dto.CartResponse;
+import com.example.commercepaymentsystem.domain.cart.dto.CartItemResponse;
 import com.example.commercepaymentsystem.domain.cart.entity.Cart;
 import com.example.commercepaymentsystem.domain.cart.entity.CartItem;
 import com.example.commercepaymentsystem.domain.cart.repository.CartItemRepository;
