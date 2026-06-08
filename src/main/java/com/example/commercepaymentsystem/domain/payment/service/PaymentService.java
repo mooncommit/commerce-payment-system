@@ -45,7 +45,6 @@ public class PaymentService {
      * @param request 결제 확정 요청 정보
      * @return 결제 확정 응답
      */
-    @Transactional
     public PaymentConfirmResponse confirmPayment(Long memberId, PaymentConfirmRequest request) {
         Payment payment = findReadyPayment(memberId, request);
 

@@ -47,32 +47,29 @@ class PointServiceTest {
     private PointService pointService;
 
     @Test
-    void 내_포인트_조회시_현재_잔액을_반환한다() {
-        // given
+    void getMyPointReturnsCurrentBalance() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        // when
+
         GetMyPointResponse response = pointService.getMyPoint(memberId);
-        // then
+
         assertThat(response.getPointBalance()).isEqualTo(5000L);
     }
 
     @Test
-    void 내_포인트_조회시_회원을_찾지못하면_예외를_던진다() {
-        // given
+    void getMyPointThrowsWhenMemberNotFound() {
         Long memberId = 999L;
 
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
-        // when & then
+
         assertThatThrownBy(() -> pointService.getMyPoint(memberId))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
-    void 포인트_내역_조회시_페이징된_포인트_원장을_반환한다() {
-        // given
+    void getMyHistoryReturnsPagedPointLedger() {
         Long memberId = 1L;
         int page = 1;
         int size = 10;
@@ -90,10 +87,9 @@ class PointServiceTest {
 
         Page<Point> pointPage = new PageImpl<>(List.of(point), PageRequest.of(0, size), 1);
         given(pointRepository.findByMemberId(eq(memberId), any(Pageable.class))).willReturn(pointPage);
-        // when
+
         PageResponse<PointHistoryResponse> response = pointService.getMyHistory(memberId, page, size);
 
-        // then
         assertThat(response.getContent()).hasSize(1);
         assertThat(response.getContent().get(0).getId()).isEqualTo(1L);
         assertThat(response.getContent().get(0).getPaymentId()).isEqualTo(10L);
@@ -105,21 +101,20 @@ class PointServiceTest {
     }
 
     @Test
-    void 포인트_스냅샷과_원장합계가_같으면_일관성_검증에_성공한다() {
-        //given
+    void isPointBalanceConsistentReturnsTrueWhenSnapshotMatchesLedgerSum() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(pointRepository.calculateLedgerBalance(memberId)).willReturn(5000L);
-        // when
+
         boolean consistent = pointService.isPointBalanceConsistent(memberId);
-        // then
+
         assertThat(consistent).isTrue();
     }
 
     @Test
-    void 포인트_스냅샷과_원장합계가_다르면_일관성_검증시_예외를_던진다() {
+    void validatePointBalanceConsistencyThrowsWhenSnapshotDoesNotMatchLedgerSum() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
 
@@ -131,7 +126,7 @@ class PointServiceTest {
     }
 
     @Test
-    void 포인트_사용시_잔액을_차감하고_사용_원장을_저장한다() {
+    void usePointsDecreasesBalanceAndSavesUseLedger() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
@@ -152,7 +147,7 @@ class PointServiceTest {
     }
 
     @Test
-    void 포인트_사용시_멱등키가_이미_존재하면_아무것도_하지않는다() {
+    void usePointsDoesNothingWhenIdempotencyKeyAlreadyExists() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
@@ -167,7 +162,7 @@ class PointServiceTest {
     }
 
     @Test
-    void 포인트_적립시_잔액을_증가시키고_적립_원장을_저장한다() {
+    void earnPointsIncreasesBalanceAndSavesEarnLedger() {
         Long memberId = 1L;
         Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 0L, 300L);
@@ -188,7 +183,7 @@ class PointServiceTest {
     }
 
     @Test
-    void 포인트_사용시_잔액이_부족하면_예외를_던진다() {
+    void usePointsThrowsWhenBalanceIsNotEnough() {
         Long memberId = 1L;
         Member member = member(memberId, 1000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
@@ -203,7 +198,7 @@ class PointServiceTest {
     }
 
     @Test
-    void 사용_포인트_복원시_환불_멱등키로_환불_원장을_저장한다() {
+    void restoreUsedPointsRestoresBalanceAndSavesRefundLedgerWithRefundIdempotencyKey() {
         Long memberId = 1L;
         Long refundId = 20L;
         Member member = member(memberId, 2000L);
@@ -225,7 +220,7 @@ class PointServiceTest {
     }
 
     @Test
-    void 적립_포인트_회수시_환불_멱등키로_회수_원장을_저장한다() {
+    void revokeEarnedPointsDecreasesBalanceAndSavesRevokeLedgerWithRefundIdempotencyKey() {
         Long memberId = 1L;
         Long refundId = 20L;
         Member member = member(memberId, 5000L);

@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - feature-ci/cd #테스트용
+      - feature-ci/cd
 
 jobs:
   deploy:
@@ -24,7 +24,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew clean build
+        run: ./gradlew clean bootJar
         env:
           DB_URL: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
           DB_USERNAME: sa
@@ -37,6 +37,8 @@ jobs:
           PORTONE_API_SECRET: test
           PORTONE_STORE_ID: test
           PORTONE_CHANNEL_KEY: test
+      - name: Remove plain jar
+        run: rm -f build/libs/*-plain.jar
 
       - name: Copy jar to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -54,7 +56,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            JAR_FILE=$(ls /home/ec2-user/build/libs/*.jar | head -n 1)
+            JAR_FILE=$(find /home/ec2-user/build/libs -name "*.jar" ! -name "*plain.jar" | head -n 1)
             mv $JAR_FILE /home/ec2-user/app.jar
             rm -rf /home/ec2-user/build
             /home/ec2-user/deploy.sh

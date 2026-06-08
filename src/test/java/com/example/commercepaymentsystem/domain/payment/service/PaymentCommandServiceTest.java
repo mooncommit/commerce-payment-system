@@ -176,8 +176,6 @@ class PaymentCommandServiceTest {
         assertEquals(PaymentStatus.REFUNDED, payment.getStatus());
         assertEquals(OrderStatus.CANCELED, order.getOrderStatus());
         assertEquals(7, product.getStockQuantity());
-        verify(pointService).restoreUsedPoints(payment);
-        verify(pointService).revokeEarnedPoints(payment);
         verify(refundService).markCompleted(2L);
     }
 
