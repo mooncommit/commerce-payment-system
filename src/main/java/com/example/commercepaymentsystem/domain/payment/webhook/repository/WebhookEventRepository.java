@@ -1,6 +1,6 @@
-package com.example.commercepaymentsystem.infra.portone.webhook.repository;
+package com.example.commercepaymentsystem.domain.payment.webhook.repository;
 
-import com.example.commercepaymentsystem.infra.portone.webhook.entity.WebhookEvent;
+import com.example.commercepaymentsystem.domain.payment.webhook.entity.WebhookEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WebhookEventRepository extends JpaRepository<WebhookEvent, Long> {

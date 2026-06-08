@@ -1,4 +1,4 @@
-package com.example.commercepaymentsystem.infra.portone.webhook;
+package com.example.commercepaymentsystem.domain.payment.webhook;
 
 import com.example.commercepaymentsystem.domain.payment.entity.Payment;
 import com.example.commercepaymentsystem.domain.payment.enums.PaymentStatus;
@@ -6,8 +6,8 @@ import com.example.commercepaymentsystem.domain.payment.port.PaymentGateway;
 import com.example.commercepaymentsystem.domain.payment.port.PaymentGatewayResponse;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentCommandService;
 import com.example.commercepaymentsystem.domain.payment.service.PaymentService;
-import com.example.commercepaymentsystem.infra.portone.webhook.entity.WebhookEvent;
-import com.example.commercepaymentsystem.infra.portone.webhook.service.WebhookEventService;
+import com.example.commercepaymentsystem.domain.payment.webhook.entity.WebhookEvent;
+import com.example.commercepaymentsystem.domain.payment.webhook.service.WebhookEventService;
 import io.portone.sdk.server.webhook.Webhook;
 import io.portone.sdk.server.webhook.WebhookTransactionPaid;
 import io.portone.sdk.server.webhook.WebhookTransactionCancelledCancelled;
