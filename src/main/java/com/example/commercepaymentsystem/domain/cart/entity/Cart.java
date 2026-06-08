@@ -3,10 +3,7 @@ package com.example.commercepaymentsystem.domain.cart.entity;
 import com.example.commercepaymentsystem.domain.member.entity.Member;
 import com.example.commercepaymentsystem.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +11,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "carts")
 public class Cart extends BaseEntity {
 
@@ -29,7 +27,8 @@ public class Cart extends BaseEntity {
     private List<CartItem> cartItems = new ArrayList<>();
 
     @Builder
-    public Cart(Member member) {
+    public Cart(Long id, Member member) {
+        this.id = id;
         this.member = member;
     }
 }

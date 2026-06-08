@@ -112,4 +112,18 @@ public class CartService {
         }
         cartItem.delete();
     }
+
+    // 결제용 상품 조회 예시
+    public List<CartItem> getSelectedItems(Long memberId, List<Long> cartItemIds) {
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
+
+        // 장바구니에 있는 아이템 중, 주문할 아이템 ID 목록에 해당하는 것만 필터링
+        return cart.getCartItems().stream()
+                .filter(item -> cartItemIds.contains(item.getId()))
+                .filter(item -> !item.isDeleted())
+                .toList();
+    }
+
+
 }
