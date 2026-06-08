@@ -1,6 +1,7 @@
 package com.example.commercepaymentsystem.domain.cart.repository;
 
 import com.example.commercepaymentsystem.domain.cart.entity.CartItem;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,5 +14,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
     boolean existsByCartIdAndProductId(Long cartId, Long productId);
 
+    @EntityGraph(attributePaths = {"product"})
     Page<CartItem> findByCartIdAndDeletedFalse(Long cartId, Pageable pageable);
 }
