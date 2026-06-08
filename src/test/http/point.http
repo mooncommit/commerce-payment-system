@@ -1,0 +1,22 @@
+### 1. 포인트 잔액 조회
+GET http://localhost:8080/api/points/balance
+Authorization: Bearer {{token}}
+
+> {%
+    client.test("포인트 잔액 정상 조회", function () {
+        client.assert(response.status === 200, "Expected 200 OK");
+        client.log("현재 잔액: " + response.body.data.balance);
+    });
+%}
+
+###
+
+### 2. 포인트 거래 내역(History) 조회
+GET http://localhost:8080/api/points/history
+Authorization: Bearer {{token}}
+
+> {%
+    client.test("내역 조회 성공", function () {
+        client.assert(response.status === 200, "Expected 200 OK");
+    });
+%}

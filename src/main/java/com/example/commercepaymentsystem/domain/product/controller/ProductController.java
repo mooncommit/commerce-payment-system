@@ -23,7 +23,9 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createProduct(@Valid @RequestBody ProductRequest requestDto) {
         productService.createProduct(requestDto);
-        return ResponseEntity.ok(ApiResponse.success("상품 추가 성공"));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("상품 추가 성공"));
     }
 
     // 전체 조회

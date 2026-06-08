@@ -46,7 +46,7 @@ public class Refund extends BaseEntity {
     @Column(nullable = false)
     private RefundStatus refundStatus;
 
-    @Column(length = 255)
+    @Column(nullable = false, length = 255)
     private String reason;
 
     @Column(name = "refunded_at")
