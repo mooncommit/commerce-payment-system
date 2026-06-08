@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow Commerce</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="page-container">
+        <!-- Hero Section -->
+        <div class="hero-banner-container">
+            <div class="hero-banner">
+                <img src="/images/banner1.webp" alt="Spring Sale" onerror="this.src='https://via.placeholder.com/600x250?text=Spring+Sale'">
+            </div>
+            <div class="hero-banner">
+                <img src="/images/banner2.webp" alt="New Arrivals" onerror="this.src='https://via.placeholder.com/600x250?text=New+Arrivals'">
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            <span class="highlight">🔥</span> 추천 상품
+        </h2>
+
+        <!-- Product Grid -->
+        <div id="productGrid" class="grid-4">
+            <!-- Products will be injected here by JS -->
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--color-text-muted);">
+                상품을 불러오는 중입니다...
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const keyword = getUrlParameter('keyword');
+            const productGrid = document.getElementById('productGrid');
+
+            try {
+                const url = keyword ? `/products?keyword=${encodeURIComponent(keyword)}` : '/products';
+                const response = await fetchApi(url);
+                const products = response.content || response; // Handle PageResponse or List
+
+                if (products.length === 0) {
+                    productGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 0; color: var(--color-text-muted);">
+                            <p>검색 결과가 없습니다.</p>
+                            <a href="/index.html" class="btn-black" style="display: inline-block; margin-top: 20px; text-decoration: none;">전체 상품 보기</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                productGrid.innerHTML = products.map(product => `
+                    <a href="/product.html?id=${product.id}" class="product-card" style="text-decoration: none; color: inherit;">
+                        <img src="${product.imageUrl || 'https://via.placeholder.com/400x400?text=No+Image'}" alt="${product.name}" class="product-image">
+                        <div class="product-info">
+                            <div class="product-title">${product.name}</div>
+                            <div class="product-price">${product.price.toLocaleString()}원</div>
+                        </div>
+                    </a>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load products', error);
+                productGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--color-danger);">
+                        상품을 불러오는데 실패했습니다.
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
