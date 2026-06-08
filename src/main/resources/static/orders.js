@@ -4,18 +4,21 @@ const STORAGE = {
 };
 
 const PRODUCT_IMAGES = {
-  10001: "assets/products/10001-cotton-twill-cap.jpg",
-  10002: "assets/products/10002-striped-socks-3pack.jpg",
-  10003: "assets/products/10003-oversized-crewneck-tshirt.jpg",
-  10004: "assets/products/10004-washed-wide-denim-pants.jpg",
-  10005: "assets/products/10005-canvas-mini-eco-bag.jpg",
-  10006: "assets/products/10006-lambswool-oversized-knit.jpg",
-  10007: "assets/products/10007-nylon-cargo-jogger-pants.jpg",
-  10008: "assets/products/10008-leather-minimal-crossbody-bag.jpg",
-  10009: "assets/products/10009-chunky-running-sneakers.jpg",
-  10010: "assets/products/10010-wool-blend-single-coat.jpg",
-  10011: "assets/products/10011-stretch-slim-chino-pants.jpg",
-  10012: "assets/products/10012-cotton-waffle-tee.jpg",
+  1: "assets/products/images/clean_code_book.png",
+  2: "assets/products/images/wireless_mouse.png",
+  3: "assets/products/images/lion_keyring.png",
+  4: "assets/products/images/leather_keyring.png",
+  5: "assets/products/images/bluetooth_headphones.png",
+  6: "assets/products/images/casual_hoodie.png",
+  7: "assets/products/images/windbreaker_jacket.png",
+  8: "assets/products/images/mechanical_keyboard.png",
+  9: "assets/products/images/prod_headphone.png",
+  10: "assets/products/images/prod_hoodie.png",
+  11: "assets/products/images/prod_jacket.png",
+  12: "assets/products/images/prod_keyboard.png",
+  13: "assets/products/images/keyring.png",
+  14: "assets/products/images/pig_keyring.png",
+  15: "assets/products/images/lg_monitor.png",
 };
 
 const ORDER_STATUS_LABELS = {
@@ -44,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   els.ordersMeta = document.getElementById("ordersMeta");
   els.refreshOrdersButton = document.getElementById("refreshOrdersButton");
   els.toast = document.getElementById("toast");
+  els.pagination = document.getElementById("pagination");
 
   els.refreshOrdersButton.addEventListener("click", () => loadOrders());
   loadOrders();
@@ -86,7 +90,7 @@ async function api(path, options = {}) {
   return payload?.data;
 }
 
-async function loadOrders() {
+async function loadOrders(page = 1) {
   state.token = localStorage.getItem(STORAGE.token);
 
   if (!state.token) {
@@ -98,20 +102,22 @@ async function loadOrders() {
   els.ordersList.innerHTML = `<div class="empty-state">주문 정보를 불러오는 중입니다.</div>`;
 
   try {
-    const data = await api("/api/orders");
+    const params = new URLSearchParams({ page: String(page), size: "10" });
+    const data = await api(`/api/orders?${params.toString()}`);
     const orders = data?.content || [];
 
     if (!orders.length) {
       els.ordersMeta.textContent = "주문 내역이 없습니다.";
       els.ordersList.innerHTML = `<div class="empty-state">아직 주문한 상품이 없습니다.</div>`;
+      if (els.pagination) els.pagination.innerHTML = "";
       return;
     }
 
     const detailResults = await Promise.allSettled(
-      orders.map((order) => api(`/api/orders/${order.orderId}`))
+      orders.map((order) => api(`/api/orders/${order.orderId || order.id}`))
     );
 
-    els.ordersMeta.textContent = `${orders.length}개의 주문`;
+    els.ordersMeta.textContent = `전체 ${data.totalElements || orders.length}개의 주문`;
     els.ordersList.innerHTML = detailResults
       .map((result, index) => {
         if (result.status === "fulfilled") {
@@ -120,6 +126,8 @@ async function loadOrders() {
         return renderOrderErrorCard(orders[index], result.reason);
       })
       .join("");
+
+    renderOrdersPagination(data);
   } catch (error) {
     if (error.status === 401) {
       clearSession();
@@ -266,6 +274,26 @@ function refundUnavailableLabel(paymentStatus, remainingQuantity) {
 function statusLabel(labels, status) {
   return labels[status] || status || "-";
 }
+
+function renderOrdersPagination(pageData) {
+  if (!els.pagination) return;
+  if (!pageData || pageData.totalPages <= 1) {
+    els.pagination.innerHTML = "";
+    return;
+  }
+
+  const prevDisabled = pageData.page <= 1 ? "disabled" : "";
+  const nextDisabled = pageData.page >= pageData.totalPages ? "disabled" : "";
+
+  els.pagination.innerHTML = `
+    <div style="display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 24px;">
+      <button class="ghost-button" type="button" ${prevDisabled} onclick="loadOrders(${pageData.page - 1})">이전</button>
+      <span style="font-size: 14px; font-weight: 500;">${pageData.page} / ${pageData.totalPages}</span>
+      <button class="ghost-button" type="button" ${nextDisabled} onclick="loadOrders(${pageData.page + 1})">다음</button>
+    </div>
+  `;
+}
+
 
 function productImage(productId) {
   return PRODUCT_IMAGES[productId] || "assets/products/product-sheet.png";

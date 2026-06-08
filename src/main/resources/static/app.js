@@ -20,11 +20,18 @@ const PRODUCT_IMAGES = {
   1: "assets/products/images/clean_code_book.png", // 클린 코드
   2: "assets/products/images/wireless_mouse.png", // 마우스
   3: "assets/products/images/lion_keyring.png", // 사자 키링
-  4: "assets/products/leather_keyring.png", // 가죽 키링
+  4: "assets/products/images/leather_keyring.png", // 가죽 키링
   5: "assets/products/images/bluetooth_headphones.png", // 헤드폰
   6: "assets/products/images/casual_hoodie.png", // 후드티
   7: "assets/products/images/windbreaker_jacket.png", // 자켓
-  8: "assets/products/mechanical_keyboard.png", // 키보드
+  8: "assets/products/images/mechanical_keyboard.png", // 기계식 키보드
+  9: "assets/products/images/prod_headphone.png", // 프리미엄 헤드폰
+  10: "assets/products/images/prod_hoodie.png", // 블랙 기모 후드티
+  11: "assets/products/images/prod_jacket.png", // 아웃도어 자켓
+  12: "assets/products/images/prod_keyboard.png", // 게이밍 키보드
+  13: "assets/products/images/keyring.png", // 기본 로고 키링
+  14: "assets/products/images/pig_keyring.png", // 핑크 돼지 키링
+  15: "assets/products/images/lg_monitor.png", // LG 스마트 모니터
 };
 
 const LOCAL_PRODUCTS = [
@@ -58,10 +65,10 @@ const LOCAL_PRODUCTS = [
   {
     productId: 4,
     name: "가죽 키링",
-    price: 18000,
-    stock: 30,
+    price: 1000,
+    stock: 0,
     description: "고급스러운 가죽 키링",
-    status: "ON_SALE",
+    status: "SOLD_OUT",
     category: "ACCESSORY",
   },
   {
@@ -218,6 +225,7 @@ async function handleClick(event) {
     if (action === "remove-cart-item") return deleteCartItem(Number(actionTarget.dataset.cartItemId));
     if (action === "cart-qty") return updateCartQuantity(actionTarget);
     if (action === "use-all-points") return useAllPoints();
+    if (action === "use-all-direct-points") return useAllDirectPoints();
     if (action === "create-order") return createOrder();
     if (action === "clear-cart") return clearCart();
   }
@@ -230,7 +238,7 @@ async function handleClick(event) {
     return loadProducts(0);
   }
 
-  const productTarget = event.target.closest("[data-product-id]");
+  const productTarget = event.target.closest(".product-card");
   if (productTarget) {
     return openProductDetail(Number(productTarget.dataset.productId));
   }
@@ -383,9 +391,9 @@ function renderProducts() {
   const page = state.productPage;
   if (page) {
     els.productMeta.textContent = `${page.totalElements}개의 상품`;
-    els.pageMeta.textContent = `${page.page + 1} / ${Math.max(page.totalPages, 1)}`;
-    els.prevPageBtn.disabled = page.page <= 0;
-    els.nextPageBtn.disabled = !page.hasNext;
+    els.pageMeta.textContent = `${page.page} / ${Math.max(page.totalPages, 1)}`;
+    els.prevPageBtn.disabled = page.page <= 1;
+    els.nextPageBtn.disabled = page.page >= page.totalPages;
   }
 }
 
@@ -425,6 +433,7 @@ async function openProductDetail(productId) {
     product.category = product.category || product.categoryCode || "TOP";
     product.status = product.status || product.saleStatus || "ON_SALE";
 
+    state.currentProduct = product;
     renderProductDetail(product);
   } catch (error) {
     const localProduct = LOCAL_PRODUCTS.find((product) => product.productId === productId);
@@ -458,6 +467,14 @@ function renderProductDetail(product) {
             <input id="detailQuantity" type="number" min="1" max="${Math.max(product.stock, 1)}" value="1" />
             <button type="button" data-action="detail-qty-plus">+</button>
           </div>
+        </div>
+        <div class="point-row" style="margin-top: 16px; margin-bottom: 24px;">
+          <label for="directPointInput" style="font-size: 14px; font-weight: 600;">포인트 사용</label>
+          <div class="point-control">
+            <input id="directPointInput" type="number" min="0" step="1" value="0" />
+            <button class="ghost-button small" type="button" data-action="use-all-direct-points">전액</button>
+          </div>
+          <span id="directPointHint" style="color: var(--ink-muted); font-size: 12px;">보유 포인트 ${state.pointBalance || 0}P</span>
         </div>
         <div class="detail-actions" style="display: flex; gap: 8px;">
           <button class="ghost-button full" type="button" data-action="add-detail-cart" ${soldOut ? "disabled" : ""}>장바구니 담기</button>
@@ -620,6 +637,12 @@ async function createOrder() {
   const usedPointAmount = normalizeUsePoint();
   const cartItemIds = state.cart.items.map((item) => item.cartItemId);
 
+  const outOfStockItems = state.cart.items.filter(item => item.quantity > item.stock);
+  if (outOfStockItems.length > 0) {
+    showToast(`'${outOfStockItems[0].productName}' 상품의 재고가 부족합니다.`, "error");
+    return;
+  }
+
   try {
     const orderResult = await api("/api/orders/cart", {
       method: "POST",
@@ -662,13 +685,24 @@ async function createDirectOrder() {
   const productId = Number(els.productDetail.dataset.productId);
   const qtyInput = document.getElementById("detailQuantity");
   const quantity = Number(qtyInput?.value || 1);
+  const pointInput = document.getElementById("directPointInput");
+  let usePointAmount = Number(pointInput?.value || 0);
 
   if (!productId || quantity < 1) return;
+
+  const localProduct = state.currentProduct || {};
+  if (quantity > (localProduct.stock || 0)) {
+    showToast("주문 수량이 현재 재고보다 많습니다.", "error");
+    return;
+  }
+
+  const maxPoints = Math.min(state.pointBalance, (localProduct.price || 0) * quantity);
+  usePointAmount = Math.min(usePointAmount, maxPoints);
 
   try {
     const orderResult = await api("/api/orders", {
       method: "POST",
-      body: { productId, quantity, usePointAmount: 0 },
+      body: { productId, quantity, usePointAmount },
     });
 
     if (orderResult.pgAmount === 0) {
@@ -739,15 +773,46 @@ async function login() {
 
 async function signup() {
   try {
+    const email = els.signupEmail.value.trim();
+    const password = els.signupPassword.value;
+    const name = els.signupName.value.trim();
+
+    if (!email) {
+      showToast("이메일을 입력해주세요.", "error");
+      return;
+    }
+    if (!email.includes("@")) {
+      showToast("올바른 이메일 형식이 아닙니다.", "error");
+      return;
+    }
+    if (!password) {
+      showToast("비밀번호를 입력해주세요.", "error");
+      return;
+    }
+    if (password.length < 8) {
+      showToast("비밀번호는 8자 이상이어야 합니다.", "error");
+      return;
+    }
+    if (!name) {
+      showToast("이름을 입력해주세요.", "error");
+      return;
+    }
+
     let rawPhone = els.signupPhone.value.trim().replace(/[^0-9]/g, "");
+    if (rawPhone.length < 10 || rawPhone.length > 11) {
+      showToast("올바른 전화번호를 입력해주세요.", "error");
+      return;
+    }
     if (rawPhone.length === 11) {
       rawPhone = rawPhone.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+    } else if (rawPhone.length === 10) {
+      rawPhone = rawPhone.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
     }
 
     const request = {
-      email: els.signupEmail.value.trim(),
-      password: els.signupPassword.value,
-      name: els.signupName.value.trim(),
+      email,
+      password,
+      name,
       phoneNumber: rawPhone,
     };
     await api("/api/auth/signup", {
@@ -846,6 +911,19 @@ function useAllPoints() {
   const subtotal = Number(state.cart?.totalAmount || 0);
   els.usePointInput.value = String(Math.min(state.pointBalance, subtotal));
   updateCheckoutTotal();
+}
+
+function useAllDirectPoints() {
+  const directPointInput = document.getElementById("directPointInput");
+  const qtyInput = document.getElementById("detailQuantity");
+  if (!directPointInput || !qtyInput) return;
+  const productId = Number(els.productDetail.dataset.productId);
+  const localProduct = state.currentProduct;
+  if (!localProduct) return;
+  
+  const quantity = Number(qtyInput.value || 1);
+  const subtotal = localProduct.price * quantity;
+  directPointInput.value = String(Math.min(state.pointBalance, subtotal));
 }
 
 function renderSession() {
@@ -1071,7 +1149,7 @@ function pointTypeLabel(type) {
 }
 
 function formatError(error) {
-  return error?.code ? `${error.code}: ${error.message}` : error?.message || "요청 처리 중 오류가 발생했습니다.";
+  return error?.message || "요청 처리 중 오류가 발생했습니다.";
 }
 
 function escapeHtml(value) {

@@ -4,18 +4,21 @@ const STORAGE = {
 };
 
 const PRODUCT_IMAGES = {
-  10001: "assets/products/10001-cotton-twill-cap.jpg",
-  10002: "assets/products/10002-striped-socks-3pack.jpg",
-  10003: "assets/products/10003-oversized-crewneck-tshirt.jpg",
-  10004: "assets/products/10004-washed-wide-denim-pants.jpg",
-  10005: "assets/products/10005-canvas-mini-eco-bag.jpg",
-  10006: "assets/products/10006-lambswool-oversized-knit.jpg",
-  10007: "assets/products/10007-nylon-cargo-jogger-pants.jpg",
-  10008: "assets/products/10008-leather-minimal-crossbody-bag.jpg",
-  10009: "assets/products/10009-chunky-running-sneakers.jpg",
-  10010: "assets/products/10010-wool-blend-single-coat.jpg",
-  10011: "assets/products/10011-stretch-slim-chino-pants.jpg",
-  10012: "assets/products/10012-cotton-waffle-tee.jpg",
+  1: "assets/products/images/clean_code_book.png",
+  2: "assets/products/images/wireless_mouse.png",
+  3: "assets/products/images/lion_keyring.png",
+  4: "assets/products/images/leather_keyring.png",
+  5: "assets/products/images/bluetooth_headphones.png",
+  6: "assets/products/images/casual_hoodie.png",
+  7: "assets/products/images/windbreaker_jacket.png",
+  8: "assets/products/images/mechanical_keyboard.png",
+  9: "assets/products/images/prod_headphone.png",
+  10: "assets/products/images/prod_hoodie.png",
+  11: "assets/products/images/prod_jacket.png",
+  12: "assets/products/images/prod_keyboard.png",
+  13: "assets/products/images/keyring.png",
+  14: "assets/products/images/pig_keyring.png",
+  15: "assets/products/images/lg_monitor.png",
 };
 
 const ORDER_STATUS_LABELS = {
@@ -119,7 +122,25 @@ async function loadOrderDetail() {
   els.refundFormArea.innerHTML = `<div class="empty-state">환불 가능 여부를 확인하는 중입니다.</div>`;
 
   try {
-    state.detail = await api(`/api/orders/${state.orderId}`);
+    const rawDetail = await api(`/api/orders/${state.orderId}`);
+    state.detail = {
+      ...rawDetail,
+      order: {
+        orderNumber: rawDetail.orderNumber,
+        status: rawDetail.orderStatus,
+        totalAmount: rawDetail.totalAmount,
+        usedPointAmount: rawDetail.usedPointAmount,
+        pgAmount: rawDetail.pgAmount,
+        earnedPointAmount: rawDetail.earnedPointAmount,
+        createdAt: rawDetail.createdAt,
+        paidAt: rawDetail.paidAt,
+        canceledAt: rawDetail.canceledAt,
+      },
+      payment: {
+        paymentId: rawDetail.paymentId,
+        status: rawDetail.paymentStatus,
+      }
+    };
     renderRefundPage();
   } catch (error) {
     if (error.status === 401) {
@@ -183,28 +204,28 @@ function renderOrderSummary(detail) {
     <div class="refund-summary-head">
       <span class="label">주문번호</span>
       <h2>${escapeHtml(order.orderNumber)}</h2>
-      <p>${formatDate(order.orderedAt)}</p>
+      <p>${formatDate(order.orderedAt || detail.createdAt)}</p>
       <div class="order-status-group">
-        <span class="status-pill">${escapeHtml(statusLabel(ORDER_STATUS_LABELS, order.status))}</span>
-        <span class="status-pill payment">${escapeHtml(statusLabel(PAYMENT_STATUS_LABELS, payment.status))}</span>
+        <span class="status-pill">${escapeHtml(statusLabel(ORDER_STATUS_LABELS, order.status || detail.orderStatus))}</span>
+        <span class="status-pill payment">${escapeHtml(statusLabel(PAYMENT_STATUS_LABELS, payment.status || detail.paymentStatus))}</span>
       </div>
     </div>
     <div class="order-summary-grid compact">
       <div>
         <span class="label">주문 금액</span>
-        <strong>${formatCurrency(order.totalAmount)}</strong>
+        <strong>${formatCurrency(order.totalAmount || detail.totalAmount)}</strong>
       </div>
       <div>
         <span class="label">사용 포인트</span>
-        <strong>${formatNumber(order.usedPointAmount)} P</strong>
+        <strong>${formatNumber(order.usedPointAmount || detail.usedPointAmount)} P</strong>
       </div>
       <div>
         <span class="label">PG 결제</span>
-        <strong>${formatCurrency(payment.pgAmount)}</strong>
+        <strong>${formatCurrency(detail.pgAmount)}</strong>
       </div>
       <div>
         <span class="label">적립 포인트</span>
-        <strong>${formatNumber(payment.rewardPointAmount)} P</strong>
+        <strong>${formatNumber(detail.earnedPointAmount)} P</strong>
       </div>
     </div>
     <div class="refund-order-items">
@@ -235,16 +256,8 @@ function renderRefundForm(detail) {
         환불 사유
         <textarea id="refundReason" maxlength="255" rows="4" placeholder="환불 사유를 입력하세요."></textarea>
       </label>
-      <div class="refund-item-selector" id="refundItemSelector">
-        ${(detail.items || []).map(renderRefundItemInput).join("")}
-      </div>
-      <div class="refund-selected-summary">
-        <span>선택 상품 기준 금액</span>
-        <strong id="selectedRefundAmount">0원</strong>
-      </div>
       <div class="refund-actions">
-        <button class="primary-button" id="partialRefundButton" type="button">선택 상품 환불 요청</button>
-        <button class="ghost-button" id="fullRefundButton" type="button">전체 환불 요청</button>
+        <button class="ghost-button" id="fullRefundButton" type="button" style="width:100%;">환불 요청</button>
       </div>
       <div id="refundResult" class="refund-result-slot"></div>
     </form>
@@ -252,29 +265,7 @@ function renderRefundForm(detail) {
 }
 
 function renderRefundItemInput(item) {
-  const remainingQuantity = remainingRefundableQuantity(item);
-  const disabled = remainingQuantity <= 0 ? "disabled" : "";
-
-  return `
-    <div class="refund-item-row">
-      <div>
-        <strong>${escapeHtml(item.productName)}</strong>
-        <span>${formatCurrency(item.unitPrice)} / 환불 가능 ${formatNumber(remainingQuantity)}개</span>
-      </div>
-      <div class="quantity-control refund-quantity">
-        <button type="button" data-action="refund-qty" data-order-item-id="${item.orderItemId}" data-delta="-1" ${disabled}>-</button>
-        <input type="number"
-               min="0"
-               max="${remainingQuantity}"
-               value="0"
-               data-refund-quantity
-               data-order-item-id="${item.orderItemId}"
-               data-unit-price="${item.unitPrice}"
-               ${disabled} />
-        <button type="button" data-action="refund-qty" data-order-item-id="${item.orderItemId}" data-delta="1" ${disabled}>+</button>
-      </div>
-    </div>
-  `;
+  return "";
 }
 
 function renderRefundUnavailable(detail) {
@@ -295,23 +286,10 @@ function renderRefundUnavailable(detail) {
 }
 
 function handleInput(event) {
-  if (event.target.matches("[data-refund-quantity]")) {
-    normalizeQuantityInput(event.target);
-    updateSelectedRefundSummary();
-  }
+  // Partial refund UI removed
 }
 
 function handleClick(event) {
-  const actionTarget = event.target.closest("[data-action]");
-  if (actionTarget?.dataset.action === "refund-qty") {
-    adjustRefundQuantity(actionTarget);
-    return;
-  }
-
-  if (event.target.id === "partialRefundButton") {
-    requestPartialRefund();
-    return;
-  }
 
   if (event.target.id === "fullRefundButton") {
     requestFullRefund();
@@ -350,28 +328,7 @@ function updateSelectedRefundSummary() {
 }
 
 async function requestPartialRefund() {
-  if (state.submitting) return;
-
-  const reason = readReason();
-  const items = collectPartialRefundItems();
-
-  if (!reason) {
-    showToast("환불 사유를 입력하세요.", "error");
-    return;
-  }
-
-  if (!items.length) {
-    showToast("환불할 상품 수량을 선택하세요.", "error");
-    return;
-  }
-
-  await submitRefund(() => api(`/api/payments/${state.detail.payment.paymentId}/refunds`, {
-    method: "POST",
-    headers: {
-      "Idempotency-Key": createIdempotencyKey("refund-partial"),
-    },
-    body: { reason, items },
-  }));
+  // Partial refund UI removed
 }
 
 async function requestFullRefund() {
