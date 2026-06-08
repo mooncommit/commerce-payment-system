@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - Follow Commerce</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-modal">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabLogin">로그인</button>
+                <button class="auth-tab" id="tabSignup">회원가입</button>
+            </div>
+            
+            <div class="auth-form-content">
+                <div id="errorMsg" style="color: #dc3545; font-size: 13px; margin-bottom: 16px; text-align: center; display: none;"></div>
+                
+                <form id="authForm">
+                    <input type="email" id="email" class="input-minimal" placeholder="이메일" required>
+                    <input type="password" id="password" class="input-minimal" placeholder="비밀번호" required>
+                    
+                    <div id="signupFields" style="display: none;">
+                        <input type="text" id="name" class="input-minimal" placeholder="이름">
+                        <input type="tel" id="phone" class="input-minimal" placeholder="전화번호">
+                    </div>
+
+                    <button type="submit" class="btn-black" id="submitBtn">로그인</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let isLoginMode = true;
+
+        const tabLogin = document.getElementById('tabLogin');
+        const tabSignup = document.getElementById('tabSignup');
+        const signupFields = document.getElementById('signupFields');
+        const submitBtn = document.getElementById('submitBtn');
+        const authForm = document.getElementById('authForm');
+        const errorMsg = document.getElementById('errorMsg');
+
+        tabLogin.addEventListener('click', () => {
+            isLoginMode = true;
+            tabLogin.classList.add('active');
+            tabSignup.classList.remove('active');
+            signupFields.style.display = 'none';
+            document.getElementById('name').required = false;
+            document.getElementById('phone').required = false;
+            submitBtn.innerText = '로그인';
+            errorMsg.style.display = 'none';
+        });
+
+        tabSignup.addEventListener('click', () => {
+            isLoginMode = false;
+            tabSignup.classList.add('active');
+            tabLogin.classList.remove('active');
+            signupFields.style.display = 'block';
+            document.getElementById('name').required = true;
+            document.getElementById('phone').required = true;
+            submitBtn.innerText = '회원가입';
+            errorMsg.style.display = 'none';
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.style.display = 'none';
+            submitBtn.disabled = true;
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                if (isLoginMode) {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error?.message || '로그인 실패');
+                    }
+                    
+                    localStorage.setItem('token', data.data.accessToken);
+                    if (data.data.refreshToken) {
+                        localStorage.setItem('refreshToken', data.data.refreshToken);
+                    }
+                    window.location.href = '/index.html';
+                } else {
+                    const name = document.getElementById('name').value;
+                    const phone = document.getElementById('phone').value;
+                    
+                    const response = await fetch('/api/member/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, name, phone })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error?.message || '회원가입 실패');
+                    }
+                    
+                    alert('회원가입이 완료되었습니다. 로그인해주세요.');
+                    tabLogin.click();
+                }
+            } catch (err) {
+                errorMsg.innerText = err.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

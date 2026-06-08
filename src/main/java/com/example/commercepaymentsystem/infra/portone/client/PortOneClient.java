@@ -38,7 +38,7 @@ public class PortOneClient implements PaymentGateway {
 
             return new PaymentGatewayResponse(transactionId, response.status(), totalAmount);
         } catch (RestClientException e) {
-            log.error("PortOne 결제 조회 API 호출 실패. paymentId={}", paymentId, e);
+            log.error("PortOne 결제 조회 API 호출 실패. paymentId={}, errorMsg={}", paymentId, e.getMessage(), e);
             throw new BusinessException(ErrorCode.PORTONE_API_ERROR);
         }
     }
