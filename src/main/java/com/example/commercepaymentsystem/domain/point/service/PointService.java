@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 public class PointService {
@@ -29,26 +28,20 @@ public class PointService {
     private final PointRepository pointRepository;
     private final MemberRepository memberRepository;
 
-    //────────────────────────────────────내 포인트 조회────────────────────────────────────
     @Transactional(readOnly = true)
-    public GetMyPointResponse getMyPoint(Long memberId){
+    public GetMyPointResponse getMyPoint(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-        return new GetMyPointResponse(member.getId(),member.getPointBalance());
+        return new GetMyPointResponse(member.getId(), member.getPointBalance());
     }
 
-    //────────────────────────────────────포인트 내역────────────────────────────────────
     @Transactional(readOnly = true)
     public PageResponse<PointHistoryResponse> getMyHistory(Long memberId, int page, int size) {
-
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt")
                 .and(Sort.by(Sort.Direction.DESC, "id"));
-
         Pageable pageable = PageRequest.of(page - 1, size, sort);
 
-        Page<Point> pointPage =
-                pointRepository.findByMemberId(memberId, pageable);
-
+        Page<Point> pointPage = pointRepository.findByMemberId(memberId, pageable);
 
         List<PointHistoryResponse> content = pointPage.getContent()
                 .stream()
@@ -71,106 +64,171 @@ public class PointService {
         );
     }
 
-    //포인트 적립
-    public void earnPoints(Payment payment) {
-        Long amount = payment.getOrder().getEarnedPointAmount();
+    // 회원 스냅샷 잔액과 포인트 원장 합계가 같은지 검증합니다.
+    @Transactional(readOnly = true)
+    public boolean isPointBalanceConsistent(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        Long ledgerBalance = pointRepository.calculateLedgerBalance(memberId);
 
-        if (amount == null || amount == 0L) {
-            return;
-        }
-
-        Member member = findMember(payment.getOrder().getMember().getId());
-
-        member.increasePoint(amount);
-
-        Point point = new Point(
-                member.getId(),
-                payment.getId(),
-                PointType.EARN,
-                amount,
-                member.getPointBalance(),
-                "주문 적립"
-        );
-
-        pointRepository.save(point);
+        return member.getPointBalance().equals(ledgerBalance);
     }
 
-    //포인트 사용
-    public void usePoints(Payment payment) {
-        Long amount = payment.getOrder().getUsedPointAmount();
+    @Transactional(readOnly = true)
+    public void validatePointBalanceConsistency(Long memberId) {
+        if (!isPointBalanceConsistent(memberId)) {
+            throw new BusinessException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
+    }
 
-        if (amount == null || amount == 0L) {
+    // 결제 완료 후 적립 포인트를 지급합니다.
+    @Transactional
+    public void earnPoints(Payment payment) {
+        validatePayment(payment);
+
+        Long amount = payment.getOrder().getEarnedPointAmount();
+        if (amount == 0L) {
+            return;
+        }
+
+        String key = Point.paymentKey(payment.getId(), PointType.EARN);
+        if (pointRepository.existsByIdempotencyKey(key)) {
             return;
         }
 
         Member member = findMember(payment.getOrder().getMember().getId());
+        if (pointRepository.existsByIdempotencyKey(key)) {
+            return;
+        }
 
+        member.increasePoint(amount);
+        savePoint(member, payment, PointType.EARN, amount, "주문 적립", key);
+    }
+
+
+    // 결제 완료 후 포인트를 차감하고 사용 원장을 기록합니다.
+    @Transactional
+    public void usePoints(Payment payment) {
+        validatePayment(payment);
+
+        Long amount = payment.getOrder().getUsedPointAmount();
+        if (amount == 0L) {
+            return;
+        }
+
+        String key = Point.paymentKey(payment.getId(), PointType.USE);
+        if (pointRepository.existsByIdempotencyKey(key)) {
+            return;
+        }
+
+        Member member = findMember(payment.getOrder().getMember().getId());
+        if (pointRepository.existsByIdempotencyKey(key)) {
+            return;
+        }
         if (member.getPointBalance() < amount) {
             throw new BusinessException(ErrorCode.INSUFFICIENT_POINT);
         }
 
         member.decreasePoint(amount);
-
-        Point point = new Point(
-                member.getId(),
-                payment.getId(),
-                PointType.USE,
-                -amount,
-                member.getPointBalance(),
-                "주문 사용"
-        );
-
-        pointRepository.save(point);
+        savePoint(member, payment, PointType.USE, -amount, "주문 사용", key);
     }
 
-    //포인트 복구
-    public void restoreUsedPoints(Payment payment) {
-        Long amount = payment.getOrder().getUsedPointAmount();
 
-        if (amount == null || amount == 0L) {
+    // 환불 시 사용 포인트를 복구하고 멱등키로 중복 복구를 막습니다.
+    @Transactional
+    public void restoreUsedPoints(Payment payment, Long refundId) {
+        validateRefundPointRequest(payment, refundId);
+
+        Long amount = payment.getOrder().getUsedPointAmount();
+        if (amount == 0L) {
+            return;
+        }
+
+        String key = Point.refundKey(refundId, PointType.REFUND);
+        if (pointRepository.existsByIdempotencyKey(key)) {
             return;
         }
 
         Member member = findMember(payment.getOrder().getMember().getId());
+        if (pointRepository.existsByIdempotencyKey(key)) {
+            return;
+        }
 
         member.increasePoint(amount);
-
-        Point point = new Point(
-                member.getId(),
-                payment.getId(),
-                PointType.REFUND,
-                amount,
-                member.getPointBalance(),
-                "사용 포인트 복구"
-        );
-
-        pointRepository.save(point);
+        savePoint(member, payment, PointType.REFUND, amount, "사용 포인트 복구", key);
     }
 
-    //포인트 회수
-    public void revokeEarnedPoints(Payment payment) {
-        Long amount = payment.getOrder().getEarnedPointAmount();
 
-        if (amount == null || amount == 0L) {
+    // 환불 완료 후 지급된 적립 포인트를 회수합니다.
+    @Transactional
+    public void revokeEarnedPoints(Payment payment, Long refundId) {
+        validateRefundPointRequest(payment, refundId);
+
+        Long amount = payment.getOrder().getEarnedPointAmount();
+        if (amount == 0L) {
+            return;
+        }
+
+        String key = Point.refundKey(refundId, PointType.REVOKE);
+        if (pointRepository.existsByIdempotencyKey(key)) {
             return;
         }
 
         Member member = findMember(payment.getOrder().getMember().getId());
+        if (pointRepository.existsByIdempotencyKey(key)) {
+            return;
+        }
 
         member.decreasePoint(amount);
+        savePoint(member, payment, PointType.REVOKE, -amount, "적립 포인트 회수", key);
+    }
 
+    private void savePoint(
+            Member member,
+            Payment payment,
+            PointType pointType,
+            Long amount,
+            String reason,
+            String idempotencyKey
+    ) {
         Point point = new Point(
                 member.getId(),
                 payment.getId(),
-                PointType.REVOKE,
+                pointType,
                 amount,
                 member.getPointBalance(),
-                "적립 포인트 회수"
+                reason,
+                idempotencyKey
         );
 
         pointRepository.save(point);
     }
 
+    private void validateRefundPointRequest(Payment payment, Long refundId) {
+        validatePayment(payment);
+        if (refundId == null) {
+            throw new BusinessException(ErrorCode.INVALID_POINT_REQUEST);
+        }
+    }
+
+    private void validatePayment(Payment payment) {
+        if (payment == null
+                || payment.getId() == null
+                || payment.getOrder() == null
+                || payment.getOrder().getMember() == null
+                || payment.getOrder().getMember().getId() == null
+                || payment.getOrder().getUsedPointAmount() == null
+                || payment.getOrder().getEarnedPointAmount() == null) {
+            throw new BusinessException(ErrorCode.INVALID_POINT_REQUEST);
+        }
+
+        if (payment.getOrder().getUsedPointAmount() < 0
+                || payment.getOrder().getEarnedPointAmount() < 0) {
+            throw new BusinessException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
+    }
+
+    // 포인트 잔액을 변경하는 동안에는 회원 row에 비관적 락을 겁니다.
     private Member findMember(Long memberId) {
         return memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
