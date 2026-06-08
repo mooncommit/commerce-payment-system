@@ -1,8 +1,8 @@
-package com.example.commercepaymentsystem.infra.portone.webhook.controller;
+package com.example.commercepaymentsystem.domain.payment.webhook.controller;
 
 import com.example.commercepaymentsystem.global.response.ApiResponse;
-import com.example.commercepaymentsystem.infra.portone.webhook.PortOneWebhookVerifier;
-import com.example.commercepaymentsystem.infra.portone.webhook.WebhookHandler;
+import com.example.commercepaymentsystem.domain.payment.webhook.PortOneWebhookVerifier;
+import com.example.commercepaymentsystem.domain.payment.webhook.WebhookHandler;
 import io.portone.sdk.server.errors.WebhookVerificationException;
 import io.portone.sdk.server.webhook.Webhook;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/webhooks")
+@RequestMapping("/api/payments/webhooks")
 @RequiredArgsConstructor
 @Slf4j
 public class WebhookController {

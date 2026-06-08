@@ -1,4 +1,4 @@
-package com.example.commercepaymentsystem.infra.portone.webhook.enums;
+package com.example.commercepaymentsystem.domain.payment.webhook.enums;
 
 /**
  * 웹훅 이벤트 처리 상태
