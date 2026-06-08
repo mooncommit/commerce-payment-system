@@ -36,12 +36,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers(
                                         "/",
-                                        "/api-test.html",
-                                        "/shop.html",
+                                        "/*.html",
+                                        "/*.css",
+                                        "/*.js",
+                                        "/*.svg",
+                                        "/images/**",
+                                        "/favicon.ico",
                                         "/api/auth/signup",
                                         "/api/auth/login",
                                         "/api/auth/reissue",
                                         "/api/webhooks/portone",
+                                        "/api/config/portone",
+                                        "/api/payments/config",
                                         "/actuator/health",
                                         "/actuator/health/**"
                                 ).permitAll()
