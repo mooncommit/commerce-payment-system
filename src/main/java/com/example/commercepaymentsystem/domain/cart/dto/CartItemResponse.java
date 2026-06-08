@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class CartItemResponse {
+    private Long cartItemId;
     private Long productId;
     private String productName;
     private int quantity;
@@ -14,6 +15,7 @@ public class CartItemResponse {
 
     public static CartItemResponse from(CartItem cartItem) {
         return CartItemResponse.builder()
+                .cartItemId(cartItem.getId())
                 .productId(cartItem.getProduct().getId())
                 .productName(cartItem.getProduct().getName())
                 .quantity(cartItem.getQuantity())
