@@ -83,4 +83,33 @@ public class CartService {
                 .items(itemResponses)
                 .build();
     }
+
+    // 장바구니 상품 수량 변경
+    @Transactional
+    public void updateQuantity(Long memberId, Long productId, int quantity) {
+        if (quantity <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_CART_QUANTITY);
+        }
+
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
+
+        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        cartItem.updateQuantity(quantity);
+    }
+
+    // 장바구니 상품 개별 삭제
+    @Transactional
+    public void removeItem(Long memberId, Long productId) {
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
+        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+        if (cartItem.isDeleted()) {
+            throw new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND);
+        }
+        cartItem.delete();
+    }
 }

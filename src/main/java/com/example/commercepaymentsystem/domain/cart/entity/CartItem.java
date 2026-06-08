@@ -30,6 +30,8 @@ public class CartItem extends BaseEntity {
     @Column(nullable = false)
     private int quantity;
 
+    private boolean deleted = false;
+
     @Builder
     public CartItem(Cart cart, Product product, int quantity) {
         this.cart = cart;
@@ -45,5 +47,15 @@ public class CartItem extends BaseEntity {
     // 수량 수정
     public void updateQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    // 수량 삭제
+    public void delete() {
+        this.deleted = true;
+    }
+
+    // 삭제 확인
+    public boolean isDeleted() {
+        return this.deleted;
     }
 }
