@@ -21,11 +21,18 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
-import static org.mockito.BDDMockito.*;
-import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
 import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class PointServiceTest {
@@ -40,44 +47,31 @@ class PointServiceTest {
     private PointService pointService;
 
     @Test
-    void 포인트_잔액을_조회한다() {
+    void 내_포인트_조회시_현재_잔액을_반환한다() {
         // given
         Long memberId = 1L;
+        Member member = member(memberId, 5000L);
 
-        Member member = new Member(
-                "test@test.com",
-                "encodedPassword",
-                "테스트회원",
-                "01012345678"
-        );
-        ReflectionTestUtils.setField(member, "id", memberId);
-        ReflectionTestUtils.setField(member, "pointBalance", 5000L);
-
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.of(member));
-
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         // when
         GetMyPointResponse response = pointService.getMyPoint(memberId);
-
         // then
         assertThat(response.getPointBalance()).isEqualTo(5000L);
     }
 
     @Test
-    void 존재하지_않는_회원이면_예외가_발생한다() {
+    void 내_포인트_조회시_회원을_찾지못하면_예외를_던진다() {
         // given
         Long memberId = 999L;
 
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.empty());
-
+        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
         // when & then
         assertThatThrownBy(() -> pointService.getMyPoint(memberId))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
-    void 포인트_거래내역을_페이징_조회한다() {
+    void 포인트_내역_조회시_페이징된_포인트_원장을_반환한다() {
         // given
         Long memberId = 1L;
         int page = 1;
@@ -89,19 +83,15 @@ class PointServiceTest {
                 PointType.EARN,
                 1000L,
                 5000L,
-                "주문 적립"
+                "주문 적립",
+                Point.paymentKey(10L, PointType.EARN)
         );
         ReflectionTestUtils.setField(point, "id", 1L);
 
-        Page<Point> pointPage =
-                new PageImpl<>(List.of(point), PageRequest.of(0, size), 1);
-
-        given(pointRepository.findByMemberId(eq(memberId), any(Pageable.class)))
-                .willReturn(pointPage);
-
+        Page<Point> pointPage = new PageImpl<>(List.of(point), PageRequest.of(0, size), 1);
+        given(pointRepository.findByMemberId(eq(memberId), any(Pageable.class))).willReturn(pointPage);
         // when
-        PageResponse<PointHistoryResponse> response =
-                pointService.getMyHistory(memberId, page, size);
+        PageResponse<PointHistoryResponse> response = pointService.getMyHistory(memberId, page, size);
 
         // then
         assertThat(response.getContent()).hasSize(1);
@@ -115,99 +105,157 @@ class PointServiceTest {
     }
 
     @Test
-    void 포인트를_사용하면_잔액이_감소하고_사용_원장이_저장된다() {
-        // given
+    void 포인트_스냅샷과_원장합계가_같으면_일관성_검증에_성공한다() {
+        //given
         Long memberId = 1L;
+        Member member = member(memberId, 5000L);
 
-        Member member = new Member(
-                "test@test.com",
-                "encodedPassword",
-                "테스트회원",
-                "01012345678"
-        );
-        ReflectionTestUtils.setField(member, "id", memberId);
-        ReflectionTestUtils.setField(member, "pointBalance", 5000L);
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(pointRepository.calculateLedgerBalance(memberId)).willReturn(5000L);
+        // when
+        boolean consistent = pointService.isPointBalanceConsistent(memberId);
+        // then
+        assertThat(consistent).isTrue();
+    }
 
+    @Test
+    void 포인트_스냅샷과_원장합계가_다르면_일관성_검증시_예외를_던진다() {
+        Long memberId = 1L;
+        Member member = member(memberId, 5000L);
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(pointRepository.calculateLedgerBalance(memberId)).willReturn(4700L);
+
+        assertThatThrownBy(() -> pointService.validatePointBalanceConsistency(memberId))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void 포인트_사용시_잔액을_차감하고_사용_원장을_저장한다() {
+        Long memberId = 1L;
+        Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
 
-        given(memberRepository.findByIdForUpdate(memberId))
-                .willReturn(Optional.of(member));
+        given(memberRepository.findByIdForUpdate(memberId)).willReturn(Optional.of(member));
 
-        // when
         pointService.usePoints(payment);
 
-        // then
         assertThat(member.getPointBalance()).isEqualTo(2000L);
-
         then(pointRepository).should().save(argThat(point ->
                 point.getMemberId().equals(memberId)
                         && point.getPaymentId().equals(10L)
                         && point.getPointType() == PointType.USE
                         && point.getAmount().equals(-3000L)
                         && point.getBalanceAfter().equals(2000L)
+                        && point.getIdempotencyKey().equals(Point.paymentKey(10L, PointType.USE))
         ));
     }
 
     @Test
-    void 포인트를_적립하면_잔액이_증가하고_적립_원장이_저장된다() {
-        // given
+    void 포인트_사용시_멱등키가_이미_존재하면_아무것도_하지않는다() {
         Long memberId = 1L;
+        Member member = member(memberId, 5000L);
+        Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
 
-        Member member = new Member(
-                "test@test.com",
-                "encodedPassword",
-                "테스트회원",
-                "01012345678"
-        );
-        ReflectionTestUtils.setField(member, "id", memberId);
-        ReflectionTestUtils.setField(member, "pointBalance", 5000L);
+        given(pointRepository.existsByIdempotencyKey(Point.paymentKey(10L, PointType.USE))).willReturn(true);
 
+        pointService.usePoints(payment);
+
+        assertThat(member.getPointBalance()).isEqualTo(5000L);
+        then(memberRepository).should(never()).findByIdForUpdate(any());
+        then(pointRepository).should(never()).save(any(Point.class));
+    }
+
+    @Test
+    void 포인트_적립시_잔액을_증가시키고_적립_원장을_저장한다() {
+        Long memberId = 1L;
+        Member member = member(memberId, 5000L);
         Payment payment = paymentWithOrder(10L, member, 0L, 300L);
 
-        given(memberRepository.findByIdForUpdate(memberId))
-                .willReturn(Optional.of(member));
+        given(memberRepository.findByIdForUpdate(memberId)).willReturn(Optional.of(member));
 
-        // when
         pointService.earnPoints(payment);
 
-        // then
         assertThat(member.getPointBalance()).isEqualTo(5300L);
-
         then(pointRepository).should().save(argThat(point ->
                 point.getMemberId().equals(memberId)
                         && point.getPaymentId().equals(10L)
                         && point.getPointType() == PointType.EARN
                         && point.getAmount().equals(300L)
                         && point.getBalanceAfter().equals(5300L)
+                        && point.getIdempotencyKey().equals(Point.paymentKey(10L, PointType.EARN))
         ));
     }
 
     @Test
-    void 보유_포인트보다_많이_사용하면_예외가_발생하고_원장은_저장되지_않는다() {
-        // given
+    void 포인트_사용시_잔액이_부족하면_예외를_던진다() {
         Long memberId = 1L;
-
-        Member member = new Member(
-                "test@test.com",
-                "encodedPassword",
-                "테스트회원",
-                "01012345678"
-        );
-        ReflectionTestUtils.setField(member, "id", memberId);
-        ReflectionTestUtils.setField(member, "pointBalance", 1000L);
-
+        Member member = member(memberId, 1000L);
         Payment payment = paymentWithOrder(10L, member, 3000L, 0L);
 
-        given(memberRepository.findByIdForUpdate(memberId))
-                .willReturn(Optional.of(member));
+        given(memberRepository.findByIdForUpdate(memberId)).willReturn(Optional.of(member));
 
-        // when & then
         assertThatThrownBy(() -> pointService.usePoints(payment))
                 .isInstanceOf(BusinessException.class);
 
         assertThat(member.getPointBalance()).isEqualTo(1000L);
-
         then(pointRepository).should(never()).save(any(Point.class));
+    }
+
+    @Test
+    void 사용_포인트_복원시_환불_멱등키로_환불_원장을_저장한다() {
+        Long memberId = 1L;
+        Long refundId = 20L;
+        Member member = member(memberId, 2000L);
+        Payment payment = paymentWithOrder(10L, member, 3000L, 300L);
+
+        given(memberRepository.findByIdForUpdate(memberId)).willReturn(Optional.of(member));
+
+        pointService.restoreUsedPoints(payment, refundId);
+
+        assertThat(member.getPointBalance()).isEqualTo(5000L);
+        then(pointRepository).should().save(argThat(point ->
+                point.getMemberId().equals(memberId)
+                        && point.getPaymentId().equals(10L)
+                        && point.getPointType() == PointType.REFUND
+                        && point.getAmount().equals(3000L)
+                        && point.getBalanceAfter().equals(5000L)
+                        && point.getIdempotencyKey().equals(Point.refundKey(refundId, PointType.REFUND))
+        ));
+    }
+
+    @Test
+    void 적립_포인트_회수시_환불_멱등키로_회수_원장을_저장한다() {
+        Long memberId = 1L;
+        Long refundId = 20L;
+        Member member = member(memberId, 5000L);
+        Payment payment = paymentWithOrder(10L, member, 3000L, 300L);
+
+        given(memberRepository.findByIdForUpdate(memberId)).willReturn(Optional.of(member));
+
+        pointService.revokeEarnedPoints(payment, refundId);
+
+        assertThat(member.getPointBalance()).isEqualTo(4700L);
+        then(pointRepository).should().save(argThat(point ->
+                point.getMemberId().equals(memberId)
+                        && point.getPaymentId().equals(10L)
+                        && point.getPointType() == PointType.REVOKE
+                        && point.getAmount().equals(-300L)
+                        && point.getBalanceAfter().equals(4700L)
+                        && point.getIdempotencyKey().equals(Point.refundKey(refundId, PointType.REVOKE))
+        ));
+    }
+
+    private Member member(Long memberId, Long pointBalance) {
+        Member member = new Member(
+                "test@test.com",
+                "encodedPassword",
+                "test-member",
+                "01012345678"
+        );
+        ReflectionTestUtils.setField(member, "id", memberId);
+        ReflectionTestUtils.setField(member, "pointBalance", pointBalance);
+        return member;
     }
 
     private Payment paymentWithOrder(Long paymentId, Member member, Long usedPointAmount, Long earnedPointAmount) {
