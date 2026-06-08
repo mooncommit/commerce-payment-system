@@ -6,8 +6,6 @@
 GET /api/config/portone
 ```
 
-PortOne 결제창 호출에 필요한 공개 설정만 반환한다.
-
 ### Response
 
 ```json
@@ -20,8 +18,3 @@ PortOne 결제창 호출에 필요한 공개 설정만 반환한다.
   "message": "PortOne 설정 조회 성공"
 }
 ```
-
-## 주의
-
-- `apiSecret`은 서버 전용 값이므로 응답에 포함하지 않는다.
-- 프론트에서 필요한 공개 값만 내려준다.

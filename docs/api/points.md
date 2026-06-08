@@ -4,7 +4,14 @@
 
 ```http
 GET /api/points/balance
-Authorization: Bearer {accessToken}
+```
+
+### Headers
+
+```json
+{
+  "Authorization": "Bearer {accessToken}"
+}
 ```
 
 ### Response
@@ -14,17 +21,28 @@ Authorization: Bearer {accessToken}
   "success": true,
   "data": {
     "memberId": 1,
-    "pointBalance": 10000
+    "pointBalance": 5000
   },
   "message": "포인트 잔액 조회 성공"
 }
 ```
 
+### Errors
+
+- `401 UNAUTHORIZED`: 인증 실패
+- `404 MEMBER_NOT_FOUND`: 회원 정보 없음
 ## 포인트 거래 내역 조회
 
 ```http
-GET /api/points/history?page=1&size=10
-Authorization: Bearer {accessToken}
+GET /api/points/history?page=0&size=10
+```
+
+### Headers
+
+```json
+{
+  "Authorization": "Bearer {accessToken}"
+}
 ```
 
 ### Response
@@ -35,15 +53,15 @@ Authorization: Bearer {accessToken}
   "data": {
     "content": [
       {
-        "id": 1,
-        "paymentId": 1,
-        "type": "EARN",
-        "amount": 100,
+        "pointId": 1,
+        "pointType": "EARN",
+        "amount": 1000,
+        "balanceAfter": 5000,
         "reason": "주문 적립",
-        "createdAt": "2026-06-06T10:00:00"
+        "createdAt": "2026-06-01T10:00:00"
       }
     ],
-    "page": 1,
+    "page": 0,
     "size": 10,
     "totalElements": 1,
     "totalPages": 1
@@ -51,3 +69,9 @@ Authorization: Bearer {accessToken}
   "message": "포인트 거래내역 조회 성공"
 }
 ```
+
+### Errors
+
+- `401 UNAUTHORIZED`: 인증 실패
+- `404 MEMBER_NOT_FOUND`: 회원 정보 없음
+

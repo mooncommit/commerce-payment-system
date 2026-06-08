@@ -45,6 +45,7 @@ public enum ErrorCode implements BaseCode {
 
     // ── POINT ──────────────────────────────────────────────
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "POINT_001", "포인트가 부족합니다."),
+    INVALID_POINT_REQUEST(HttpStatus.BAD_REQUEST, "POINT_002", "포인트 처리 요청값이 올바르지 않습니다."),
 
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001", "주문을 찾을 수 없습니다."),
