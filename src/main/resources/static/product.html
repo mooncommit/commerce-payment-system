@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품 상세 - Follow Commerce</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="page-container">
+        <div id="loading" style="text-align: center; padding: 60px 0;">로딩 중...</div>
+        
+        <div id="productDetail" class="product-detail-container" style="display: none;">
+            <div class="product-detail-image-section">
+                <img id="productImage" src="" alt="Product">
+            </div>
+            <div class="product-detail-info-section">
+                <div class="product-breadcrumb">홈 > <span id="productCategory">카테고리 없음</span></div>
+                <h1 id="productName" class="product-detail-title"></h1>
+                <div id="productPrice" class="product-detail-price"></div>
+                <div class="product-detail-divider"></div>
+                <p id="productDescription" class="product-detail-description"></p>
+                
+                <div class="quantity-selector">
+                    <span style="font-size: 15px; font-weight: 500;">수량</span>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" id="btnMinus">-</button>
+                        <div class="quantity-value" id="quantityVal">1</div>
+                        <button class="quantity-btn" id="btnPlus">+</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+                    <span style="font-size: 16px; font-weight: 600;">총 상품 금액</span>
+                    <span id="totalPrice" style="font-size: 24px; font-weight: 700; color: var(--color-accent);"></span>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-outline" id="btnCart">장바구니 담기</button>
+                    <button class="btn-black" id="btnBuy">바로 구매하기</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const productId = getUrlParameter('id');
+            if (!productId) {
+                alert('잘못된 접근입니다.');
+                window.location.href = '/index.html';
+                return;
+            }
+
+            let product = null;
+            let quantity = 1;
+
+            try {
+                product = await fetchApi(`/products/${productId}`);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('productDetail').style.display = 'flex';
+
+                document.getElementById('productImage').src = product.imageUrl || 'https://via.placeholder.com/600x600?text=No+Image';
+                document.getElementById('productName').innerText = product.name;
+                document.getElementById('productPrice').innerText = product.price.toLocaleString() + '원';
+                document.getElementById('productDescription').innerText = product.description;
+                document.getElementById('productCategory').innerText = product.category || '카테고리 없음';
+                updateTotal();
+            } catch (err) {
+                alert('상품 정보를 불러오는데 실패했습니다.');
+                window.location.href = '/index.html';
+            }
+
+            function updateTotal() {
+                if (product) {
+                    document.getElementById('totalPrice').innerText = (product.price * quantity).toLocaleString() + '원';
+                }
+            }
+
+            document.getElementById('btnMinus').addEventListener('click', () => {
+                if (quantity > 1) {
+                    quantity--;
+                    document.getElementById('quantityVal').innerText = quantity;
+                    updateTotal();
+                }
+            });
+
+            document.getElementById('btnPlus').addEventListener('click', () => {
+                if (quantity < (product.stockQuantity || 999)) {
+                    quantity++;
+                    document.getElementById('quantityVal').innerText = quantity;
+                    updateTotal();
+                }
+            });
+
+            document.getElementById('btnCart').addEventListener('click', async () => {
+                if (!localStorage.getItem('token')) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/login.html';
+                    return;
+                }
+                try {
+                    await fetchApi('/carts', {
+                        method: 'POST',
+                        body: JSON.stringify({ productId: product.id, quantity })
+                    });
+                    alert('장바구니에 추가되었습니다.');
+                    updateCartBadge();
+                } catch (err) {
+                    alert(err.message || '장바구니 추가 실패');
+                }
+            });
+
+            document.getElementById('btnBuy').addEventListener('click', async () => {
+                if (!localStorage.getItem('token')) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const usePointAmount = 0; // 포인트 사용은 결제창에서 구현하거나 생략
+                try {
+                    const orderData = await fetchApi('/orders', {
+                        method: 'POST',
+                        body: JSON.stringify({ productId: product.id, quantity, usePointAmount })
+                    });
+                    // Store orderData in sessionStorage to pass to payment page
+                    sessionStorage.setItem('checkoutOrderData', JSON.stringify(orderData));
+                    window.location.href = `/payment.html?productId=${product.id}`;
+                } catch (err) {
+                    alert(err.message || '주문 생성 실패');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -8,6 +8,8 @@ import com.example.commercepaymentsystem.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import com.example.commercepaymentsystem.infra.portone.config.PortOneProperties;
+import com.example.commercepaymentsystem.domain.payment.dto.PortOneConfigResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +19,15 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentFacade paymentFacade;
+    private final PortOneProperties portOneProperties;
+
+    @GetMapping("/config")
+    public ResponseEntity<ApiResponse<PortOneConfigResponse>> getConfig() {
+        return ResponseEntity.ok(ApiResponse.success(
+            new PortOneConfigResponse(portOneProperties.getStoreId(), portOneProperties.getChannelKey()), 
+            "포트원 설정 조회 성공"
+        ));
+    }
 
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse<PaymentConfirmResponse>> confirmPayment(

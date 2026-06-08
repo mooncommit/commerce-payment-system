@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장바구니 - Follow Commerce</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="page-container">
+        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">장바구니</h2>
+        
+        <div id="cartContent" style="display: flex; gap: 40px; align-items: flex-start; display: none;">
+            <!-- Cart Items -->
+            <div style="flex: 2;">
+                <div class="card" style="padding: 24px;">
+                    <div style="font-weight: 600; font-size: 18px; margin-bottom: 16px; border-bottom: 1px solid var(--color-border); padding-bottom: 16px;">담긴 상품</div>
+                    <div id="cartItemsList"></div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div style="flex: 1; position: sticky; top: 80px;">
+                <div class="card" style="padding: 24px;">
+                    <div style="font-weight: 600; font-size: 18px; margin-bottom: 16px;">결제 정보</div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: var(--color-text-main);">
+                        <span>총 상품 금액</span>
+                        <span id="summaryTotalAmount">0원</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 15px; color: var(--color-text-main);">
+                        <span>보유 포인트</span>
+                        <span id="summaryMyPoint" style="color: var(--color-accent); font-weight: 600;">0P</span>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">사용할 포인트</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="inputUsePoint" value="0" min="0" style="flex: 1; padding: 10px; border: 1px solid var(--color-border); border-radius: 4px; outline: none;">
+                            <button id="btnUseAllPoints" style="padding: 0 12px; background: var(--color-background-hover); border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; cursor: pointer;">전액 사용</button>
+                        </div>
+                        <div id="pointError" style="color: var(--color-danger); font-size: 12px; margin-top: 4px; display: none;">사용할 포인트가 잘못되었습니다.</div>
+                    </div>
+
+                    <div style="height: 1px; background-color: var(--color-border); margin-bottom: 24px;"></div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <span style="font-size: 16px; font-weight: 600;">최종 결제 금액</span>
+                        <span id="summaryPgAmount" style="font-size: 24px; font-weight: 800; color: var(--color-accent);">0원</span>
+                    </div>
+
+                    <button id="btnCheckout" class="btn-black" style="width: 100%; padding: 16px; font-size: 16px;">장바구니 상품 결제하기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="emptyCart" style="text-align: center; padding: 60px 0; color: var(--color-text-muted); display: none;">
+            <p>장바구니가 비어 있습니다.</p>
+            <a href="/index.html" class="btn-black" style="display: inline-block; margin-top: 20px; text-decoration: none; padding: 12px 24px;">쇼핑 계속하기</a>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!localStorage.getItem('token')) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            let cartData = null;
+            let profileData = null;
+
+            async function loadCart() {
+                try {
+                    cartData = await fetchApi('/carts');
+                    profileData = await fetchApi('/member/me');
+                    renderCart();
+                } catch (e) {
+                    alert('장바구니 로드 실패');
+                }
+            }
+
+            function renderCart() {
+                if (!cartData || !cartData.items || cartData.items.length === 0) {
+                    document.getElementById('cartContent').style.display = 'none';
+                    document.getElementById('emptyCart').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('emptyCart').style.display = 'none';
+                document.getElementById('cartContent').style.display = 'flex';
+
+                const list = document.getElementById('cartItemsList');
+                list.innerHTML = cartData.items.map(item => `
+                    <div style="display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f1f3f4; align-items: center;">
+                        <img src="${item.imageUrl || 'https://via.placeholder.com/80'}" alt="${item.productName}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; font-size: 15px; margin-bottom: 4px;">${item.productName}</div>
+                            <div style="font-size: 14px; color: var(--color-text-muted); margin-bottom: 8px;">${item.price.toLocaleString()}원</div>
+                            <div style="display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: 4px; width: fit-content;">
+                                <div style="width: 40px; text-align: center; font-size: 14px; padding: 4px 0;">수량: ${item.quantity}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">${(item.price * item.quantity).toLocaleString()}원</div>
+                            <button onclick="removeItem(${item.cartItemId})" style="font-size: 13px; color: var(--color-danger); text-decoration: underline;">삭제</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                updateSummary();
+            }
+
+            function updateSummary() {
+                const usePointInput = document.getElementById('inputUsePoint');
+                let usePoint = parseInt(usePointInput.value) || 0;
+                
+                const totalAmount = cartData.totalPrice;
+                const myPoint = profileData.point;
+
+                if (usePoint > myPoint || usePoint > totalAmount) {
+                    document.getElementById('pointError').style.display = 'block';
+                    document.getElementById('btnCheckout').disabled = true;
+                } else {
+                    document.getElementById('pointError').style.display = 'none';
+                    document.getElementById('btnCheckout').disabled = false;
+                }
+
+                document.getElementById('summaryTotalAmount').innerText = totalAmount.toLocaleString() + '원';
+                document.getElementById('summaryMyPoint').innerText = myPoint.toLocaleString() + 'P';
+                
+                const pgAmount = Math.max(0, totalAmount - usePoint);
+                document.getElementById('summaryPgAmount').innerText = pgAmount.toLocaleString() + '원';
+            }
+
+            window.removeItem = async (itemId) => {
+                try {
+                    await fetchApi(`/carts/items/${itemId}`, { method: 'DELETE' });
+                    await loadCart();
+                    updateCartBadge();
+                } catch (e) {
+                    alert('삭제 실패');
+                }
+            };
+
+            document.getElementById('inputUsePoint').addEventListener('input', updateSummary);
+            
+            document.getElementById('btnUseAllPoints').addEventListener('click', () => {
+                const totalAmount = cartData.totalPrice;
+                const myPoint = profileData.point;
+                document.getElementById('inputUsePoint').value = Math.min(totalAmount, myPoint);
+                updateSummary();
+            });
+
+            document.getElementById('btnCheckout').addEventListener('click', async () => {
+                const usePoint = parseInt(document.getElementById('inputUsePoint').value) || 0;
+                const btn = document.getElementById('btnCheckout');
+                btn.disabled = true;
+                btn.innerText = '주문 생성 중...';
+
+                try {
+                    const orderData = await fetchApi('/carts/orders', {
+                        method: 'POST',
+                        body: JSON.stringify({ usePointAmount: usePoint })
+                    });
+                    sessionStorage.setItem('checkoutOrderData', JSON.stringify(orderData));
+                    window.location.href = '/payment.html';
+                } catch (err) {
+                    alert(err.message || '장바구니 주문 생성 실패');
+                    btn.disabled = false;
+                    btn.innerText = '장바구니 상품 결제하기';
+                }
+            });
+
+            loadCart();
+        });
+    </script>
+</body>
+</html>
