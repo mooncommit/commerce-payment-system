@@ -33,16 +33,20 @@ public class CartService {
     // 장바구니 상품 추가
     @Transactional
     public void addItem(Long memberId, Long productId, int quantity) {
+        // 1. 유효성 검사 (입력 수량)
         if (quantity <= 0) {
             throw new BusinessException(ErrorCode.INVALID_CART_QUANTITY);
         }
 
+        // 2. 회원 조회
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
+        // 3. 장바구니 조회 (없으면 생성)
         Cart cart = cartRepository.findByMemberId(memberId)
                 .orElseGet(() -> cartRepository.save(Cart.builder().member(member).build()));
 
+        // 4. 상품 조회 및 상태 체크
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
@@ -50,19 +54,34 @@ public class CartService {
             throw new BusinessException(ErrorCode.PRODUCT_UNAVAILABLE);
         }
 
+        // 5. 장바구니 아이템 조회 및 로직 수행
         cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
                 .ifPresentOrElse(
                         cartItem -> {
+                            // [재고 검증] 기존 수량 + 추가 수량 >= 재고 확인
+                            if (product.getStockQuantity() < (cartItem.getQuantity() + quantity)) {
+                                throw new BusinessException(ErrorCode.OUT_OF_STOCK);
+                            }
+
+                            // [Soft Delete 복구]
                             if (cartItem.isDeleted()) {
                                 cartItem.restore(); // 삭제된 상태라면 복구
                             }
+                            // [수량 업데이트]
                             cartItem.addQuantity(quantity);
                         },
-                        () -> cartItemRepository.save(CartItem.builder() // 신규 생성
-                                .cart(cart)
-                                .product(product)
-                                .quantity(quantity)
-                                .build())
+                        () -> {
+                            // [재고 검증] 신규 아이템 추가 시 재고 확인
+                            if (product.getStockQuantity() < quantity) {
+                                throw new BusinessException(ErrorCode.OUT_OF_STOCK);
+                            }
+                            // 신규 생성
+                            cartItemRepository.save(CartItem.builder()
+                                    .cart(cart)
+                                    .product(product)
+                                    .quantity(quantity)
+                                    .build());
+                        }
                 );
     }
 
