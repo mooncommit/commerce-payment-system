@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Getter
@@ -28,4 +29,21 @@ public class CartItem extends BaseEntity {
 
     @Column(nullable = false)
     private int quantity;
+
+    @Builder
+    public CartItem(Cart cart, Product product, int quantity) {
+        this.cart = cart;
+        this.product = product;
+        this.quantity = quantity;
+    }
+
+    // 수량 증가
+    public void addQuantity(int quantity) {
+        this.quantity += quantity;
+    }
+
+    // 수량 수정
+    public void updateQuantity(int quantity) {
+        this.quantity = quantity;
+    }
 }
