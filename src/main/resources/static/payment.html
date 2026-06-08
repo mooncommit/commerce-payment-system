@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상점 - 결제하기</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <!-- 포트원 SDK V2 -->
+    <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/index.html" class="nav-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                팔로우 커머스
+            </a>
+            <div class="nav-links" id="nav-right"></div>
+        </div>
+    </nav>
+
+    <main class="main-content container flex" style="align-items: flex-start; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 600px; padding: var(--spacing-xl);">
+            <h2 class="mb-8">결제 상세 확인</h2>
+            <div id="order-info">
+                <div class="empty-state">주문 정보를 불러오는 중...</div>
+            </div>
+            
+            <!-- 결제 취소 (결제 대기중 취소) -->
+            <div class="mt-8 flex gap-4">
+                <button id="cancel-btn" class="btn btn-secondary" style="flex: 1; display: none;" onclick="cancelPendingOrder()">주문 취소</button>
+                <button id="pay-btn" class="btn btn-primary" style="flex: 2; display: none;" onclick="requestPayment()">포트원 결제하기</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('orderId');
+        let orderDetail = null;
+        let portOneConfig = null;
+
+        async function initPaymentPage() {
+            if (!App.token) {
+                App.showToast('로그인이 필요합니다.', 'error');
+                window.location.href = '/login.html';
+                return;
+            }
+            if (!orderId) {
+                App.showToast('잘못된 접근입니다.', 'error');
+                window.location.href = '/index.html';
+                return;
+            }
+
+            try {
+                // 병렬 요청
+                const [orderRes, configRes] = await Promise.all([
+                    App.fetch(`/orders/${orderId}`),
+                    App.fetch('/payments/config', { method: 'GET' })
+                ]);
+
+                if (orderRes && orderRes.data) {
+                    orderDetail = orderRes.data;
+                    renderOrderInfo();
+                }
+                if (configRes && configRes.data) {
+                    portOneConfig = configRes.data;
+                }
+            } catch (error) {
+                document.getElementById('order-info').innerHTML = `
+                    <div class="empty-state text-danger">정보를 불러오는 데 실패했습니다.<br>${error.message}</div>
+                `;
+            }
+        }
+
+        function renderOrderInfo() {
+            const container = document.getElementById('order-info');
+
+            // 첫 번째 상품명 추출
+            const itemName = orderDetail.items && orderDetail.items.length > 0 
+                ? orderDetail.items[0].productName + (orderDetail.items.length > 1 ? ` 외 ${orderDetail.items.length - 1}건` : '')
+                : '상품';
+
+            container.innerHTML = `
+                <table class="table mb-8">
+                    <tbody>
+                        <tr>
+                            <th style="width: 120px;">주문 번호</th>
+                            <td>${orderDetail.orderNumber}</td>
+                        </tr>
+                        <tr>
+                            <th>상품명</th>
+                            <td>${itemName}</td>
+                        </tr>
+                        <tr>
+                            <th>총 주문금액</th>
+                            <td>${App.formatCurrency(orderDetail.totalAmount)}</td>
+                        </tr>
+                        <tr>
+                            <th>포인트 사용</th>
+                            <td class="text-danger">-${App.formatCurrency(orderDetail.usedPointAmount)}</td>
+                        </tr>
+                        <tr>
+                            <th>적립 예정</th>
+                            <td class="text-success">+${App.formatCurrency(orderDetail.earnedPointAmount)}</td>
+                        </tr>
+                        <tr style="border-top: 2px solid var(--border-color);">
+                            <th style="font-size: 1.125rem;">최종 결제금액</th>
+                            <td style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">
+                                ${App.formatCurrency(orderDetail.pgAmount)}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+
+            if (orderDetail.orderStatus === 'PENDING_PAYMENT') {
+                document.getElementById('pay-btn').style.display = 'block';
+                document.getElementById('cancel-btn').style.display = 'block';
+            } else {
+                container.innerHTML += `<div class="badge badge-warning mb-4">이미 처리되었거나 취소된 주문입니다.</div>`;
+            }
+        }
+
+        async function requestPayment() {
+            if (!portOneConfig || !orderDetail) return;
+            
+            // 전액 포인트 결제 시
+            if (orderDetail.pgAmount <= 0) {
+                verifyPayment("POINT_FULL_PAY", "point_payment_0");
+                return;
+            }
+
+            const itemName = orderDetail.items && orderDetail.items.length > 0 
+                ? orderDetail.items[0].productName + (orderDetail.items.length > 1 ? ` 외 ${orderDetail.items.length - 1}건` : '')
+                : '상품';
+
+            try {
+                // PortOne V2 SDK 호출
+                const response = await PortOne.requestPayment({
+                    storeId: portOneConfig.storeId,
+                    channelKey: portOneConfig.channelKey,
+                    paymentId: `payment-${crypto.randomUUID().substring(0,8)}-${orderDetail.paymentId}`,
+                    orderName: itemName,
+                    totalAmount: orderDetail.pgAmount,
+                    currency: "CURRENCY_KRW",
+                    payMethod: "CARD",
+                });
+
+                if (response.code !== undefined) {
+                    // 결제 실패 또는 사용자가 창을 닫음
+                    App.showToast(`결제 실패: ${response.message}`, 'error');
+                    return;
+                }
+
+                // 결제 성공 시 서버 검증
+                verifyPayment(response.paymentId, response.paymentId);
+
+            } catch (error) {
+                App.showToast('결제 요청 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        async function verifyPayment(portonePaymentId, displayId) {
+            try {
+                App.showToast('결제를 검증하고 있습니다...', 'success');
+                const res = await App.fetch('/payments/confirm', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        paymentId: orderDetail.paymentId,
+                        portonePaymentId: portonePaymentId
+                    })
+                });
+
+                if (res && res.data) {
+                    App.showToast('결제가 완료되었습니다!', 'success');
+                    setTimeout(() => window.location.href = '/orders.html', 1500);
+                }
+            } catch (error) {
+                App.showToast(`결제 검증 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function cancelPendingOrder() {
+            if (!confirm('이 주문을 취소하시겠습니까?')) return;
+
+            try {
+                await App.fetch(`/orders/${orderId}/status`, {
+                    method: 'PATCH'
+                });
+                App.showToast('주문이 취소되었습니다.');
+                setTimeout(() => window.location.href = '/orders.html', 1000);
+            } catch (error) {
+                App.showToast('주문 취소 실패: ' + error.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPaymentPage);
+    </script>
+</body>
+</html>

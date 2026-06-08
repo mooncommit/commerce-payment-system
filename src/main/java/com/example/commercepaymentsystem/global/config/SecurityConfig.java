@@ -34,14 +34,26 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers(
+                                        "/",
+                                        "/*.html",
+                                        "/*.css",
+                                        "/*.js",
+                                        "/*.svg",
+                                        "/*.png",
+                                        "/*.webp",
+                                        "/css/**",
+                                        "/js/**",
+                                        "/images/**",
                                         "/api/auth/signup",
                                         "/api/auth/login",
-                                        "/api/auth/reissue",
-                                        "/api/webhooks/portone",
-                                        "/actuator/health",
-                                        "/actuator/health/**"
+                                        "/api/products",
+                                        "/api/products/**",
+                                        "/api/payments/config",
+                                        "/api/payments/webhook",
+                                        "/v3/api-docs/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html"
                                 ).permitAll()
-
                                 .anyRequest().authenticated()
                 )
 

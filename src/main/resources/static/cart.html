@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상점 - 장바구니</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/index.html" class="nav-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                팔로우 커머스
+            </a>
+            <div class="nav-links" id="nav-right"></div>
+        </div>
+    </nav>
+
+    <main class="main-content container">
+        <div class="flex justify-between items-center mb-8">
+            <h1>장바구니</h1>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="md:col-span-2">
+                <div id="cart-items" class="grid gap-4">
+                    <!-- 장바구니 아이템 렌더링 -->
+                    <div class="empty-state">장바구니를 불러오는 중...</div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="card" style="position: sticky; top: 100px;">
+                    <div class="card-body">
+                        <h3 class="mb-4">결제 정보</h3>
+                        
+                        <div class="flex justify-between mb-2">
+                            <span>총 상품금액</span>
+                            <span id="cart-total" style="font-weight: 600;">0원</span>
+                        </div>
+                        
+                        <!-- 장바구니 일괄 결제는 현재 단건 주문 API만 있으므로 임시 비활성 혹은 경고 메시지 표시 -->
+                        <div class="badge badge-warning mt-4 mb-4" style="display: block; white-space: normal;">
+                            현재 상품 상세 페이지에서 '바로 구매하기'를 통해서만 주문이 가능합니다. 장바구니 일괄 결제는 준비 중입니다.
+                        </div>
+
+                        <button class="btn btn-primary btn-block" disabled>
+                            전체 상품 주문하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/cart.js"></script>
+</body>
+</html>
