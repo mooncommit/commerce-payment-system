@@ -47,3 +47,12 @@ VALUES (14, 'ACCESSORY', '핑크 돼지 키링', '귀여운 핑크 돼지 인형
 
 INSERT IGNORE INTO products (id, category_code, name, description, price, stock_quantity, sale_status, created_at, updated_at)
 VALUES (15, 'DIGITAL', 'LG 스마트 모니터', '스탠드형 LG 스마트 모니터', 650000, 10, 'ON_SALE', NOW(), NOW());
+
+INSERT IGNORE INTO products (id, category_code, name, description, price, stock_quantity, sale_status, created_at, updated_at)
+VALUES (16, 'BOOK', '혼자 공부하는 자바', '기본 개념부터 실습까지 자바 프로그래밍 입문서', 26000, 100, 'ON_SALE', NOW(), NOW());
+
+INSERT IGNORE INTO products (id, category_code, name, description, price, stock_quantity, sale_status, created_at, updated_at)
+VALUES (17, 'BOOK', '스프링 교과서', '기초부터 탄탄하게 배워서 바로 쓰는 스프링 입문', 32000, 50, 'ON_SALE', NOW(), NOW());
+
+INSERT IGNORE INTO products (id, category_code, name, description, price, stock_quantity, sale_status, created_at, updated_at)
+VALUES (18, 'BOOK', '자료구조와 함께 배우는 알고리즘 입문', '자바 편 (전면 개정판)', 22000, 80, 'ON_SALE', NOW(), NOW());

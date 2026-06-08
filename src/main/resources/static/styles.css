@@ -115,9 +115,10 @@ img {
   border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--ink-muted);
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 600;
   text-decoration: none;
+  border-radius: 0 !important;
 }
 
 .nav-link:hover,
@@ -129,6 +130,7 @@ img {
 .header-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 18px;
 }
 
@@ -144,9 +146,12 @@ img {
   background: transparent;
   color: var(--ink);
   border-radius: 50%;
+  text-decoration: none;
 }
 
-.icon-button:hover {
+.icon-button:hover,
+.icon-button:active,
+.icon-button.is-active {
   color: var(--navy);
 }
 

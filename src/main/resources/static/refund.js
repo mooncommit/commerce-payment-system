@@ -19,6 +19,9 @@ const PRODUCT_IMAGES = {
   13: "assets/products/images/keyring.png",
   14: "assets/products/images/pig_keyring.png",
   15: "assets/products/images/lg_monitor.png",
+  16: "assets/products/images/book_java.png",
+  17: "assets/products/images/book_spring.png",
+  18: "assets/products/images/book_algorithm.png",
 };
 
 const ORDER_STATUS_LABELS = {

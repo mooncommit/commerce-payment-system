@@ -32,6 +32,9 @@ const PRODUCT_IMAGES = {
   13: "assets/products/images/keyring.png", // 기본 로고 키링
   14: "assets/products/images/pig_keyring.png", // 핑크 돼지 키링
   15: "assets/products/images/lg_monitor.png", // LG 스마트 모니터
+  16: "assets/products/images/book_java.png", // 혼자 공부하는 자바
+  17: "assets/products/images/book_spring.png", // 스프링 교과서
+  18: "assets/products/images/book_algorithm.png", // 알고리즘 입문
 };
 
 const LOCAL_PRODUCTS = [
@@ -252,6 +255,18 @@ async function handleClick(event) {
 function handleInput(event) {
   if (event.target === els.usePointInput) {
     updateCheckoutTotal();
+  } else if (event.target.id === "directPointInput") {
+    const directPointInput = event.target;
+    const qtyInput = document.getElementById("detailQuantity");
+    const localProduct = state.currentProduct;
+    if (qtyInput && localProduct) {
+      let value = Number(directPointInput.value || 0);
+      const quantity = Number(qtyInput.value || 1);
+      const subtotal = localProduct.price * quantity;
+      const maxPoints = Math.min(state.pointBalance, subtotal);
+      if (value > maxPoints) directPointInput.value = String(maxPoints);
+      if (value < 0) directPointInput.value = "0";
+    }
   }
 }
 
@@ -459,6 +474,7 @@ function renderProductDetail(product) {
         <p class="breadcrumb">컬렉션 / ${CATEGORY_LABELS[product.category] || product.category}</p>
         <h2>${escapeHtml(product.name)}</h2>
         <p class="detail-price">${formatCurrency(product.price)}</p>
+        <p class="detail-stock" style="font-size: 13px; color: var(--ink-muted); margin-bottom: 24px;">남은 재고: ${formatNumber(product.stock)}개</p>
         <p class="detail-description">${escapeHtml(product.description || "")}</p>
         <div class="quantity-row">
           <span>수량</span>
@@ -892,7 +908,7 @@ function renderTransactions(transactions) {
 function updateCheckoutTotal() {
   const subtotal = Number(state.cart?.totalAmount || 0);
   const usablePoint = Math.min(state.pointBalance, subtotal);
-  const usePointAmount = normalizeUsePoint(false);
+  const usePointAmount = normalizeUsePoint(true);
   els.pointHint.textContent = `보유 포인트 ${formatNumber(state.pointBalance)}P / 최대 ${formatNumber(usablePoint)}P`;
   els.checkoutTotal.textContent = formatCurrency(Math.max(subtotal - usePointAmount, 0));
 }
