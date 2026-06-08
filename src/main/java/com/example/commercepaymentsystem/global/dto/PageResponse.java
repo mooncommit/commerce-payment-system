@@ -4,7 +4,10 @@ import lombok.Getter;
 
 import java.util.List;
 
-//공통페이징처리
+/**
+ * 공통 페이징 응답입니다.
+ * content/page/size 값이 JSON 응답에 포함되도록 Getter를 제공합니다.
+ */
 @Getter
 public class PageResponse<T> {
 
@@ -13,7 +16,6 @@ public class PageResponse<T> {
     private final int size;
     private final long totalElements;
     private final int totalPages;
-
 
     public PageResponse(List<T> content, int page, int size, long totalElements, int totalPages) {
         this.content = content;

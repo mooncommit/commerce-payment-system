@@ -5,6 +5,7 @@ import com.example.commercepaymentsystem.domain.auth.jwt.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -34,6 +35,9 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers(
+                                        "/",
+                                        "/api-test.html",
+                                        "/shop.html",
                                         "/api/auth/signup",
                                         "/api/auth/login",
                                         "/api/auth/reissue",
@@ -41,6 +45,7 @@ public class SecurityConfig {
                                         "/actuator/health",
                                         "/actuator/health/**"
                                 ).permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
 
                                 .anyRequest().authenticated()
                 )
