@@ -295,72 +295,25 @@ async function addCartItem(productId, quantity, pendingMessage) {
   }
 }
 
-async function refreshCart(showErrors = true) {
-  if (!state.token) {
-    state.cart = null;
-    renderCart();
-    return;
-  }
+    updateCartBadge();
+}
 
-  try {
-    const response = await api("/api/carts");
-    const actualItems = response?.content || response?.items || response || [];
-    const items = Array.isArray(actualItems) ? actualItems : [];
-
-    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-    const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-
-    state.cart = {
-      items,
-      totalQuantity,
-      totalAmount
-    };
-    renderCart();
-  } catch (error) {
-    if (showErrors) showToast(formatError(error), "error");
-    if (error.status === 401) {
-      clearSession();
-      renderSession();
+async function updateCartBadge() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+        const cart = await fetchApi('/carts');
+        const count = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+        const badge = document.getElementById('cartBadge');
+        if (count > 0) {
+            badge.innerText = count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    } catch (e) {
+        console.warn('Failed to load cart count', e);
     }
-    renderCart();
-  }
-}
-
-function renderCart() {
-  const cart = state.cart;
-  const count = cart?.totalQuantity || 0;
-  els.cartCount.textContent = String(count);
-  els.cartSubtotal.textContent = formatCurrency(cart?.totalAmount || 0);
-
-  if (!state.token) {
-    els.cartItems.innerHTML = `<div class="empty-state">로그인이 필요합니다.</div>`;
-  } else if (!cart?.items?.length) {
-    els.cartItems.innerHTML = `<div class="empty-state">장바구니가 비어 있습니다.</div>`;
-  } else {
-    els.cartItems.innerHTML = cart.items.map(renderCartItem).join("");
-  }
-
-  updateCheckoutTotal();
-}
-
-function renderCartItem(item) {
-  return `
-    <article class="cart-item">
-      <img src="${productImage(item.productId)}" alt="${escapeHtml(item.productName)}" />
-      <div>
-        <h3>${escapeHtml(item.productName)}</h3>
-        <p>${formatCurrency(item.unitPrice)}</p>
-        <div class="quantity-control">
-          <button type="button" data-action="cart-qty" data-cart-item-id="${item.cartItemId}" data-next-quantity="${item.quantity - 1}">-</button>
-          <input type="number" min="1" max="${item.stock}" value="${item.quantity}" data-cart-qty-input data-cart-item-id="${item.cartItemId}" />
-          <button type="button" data-action="cart-qty" data-cart-item-id="${item.cartItemId}" data-next-quantity="${item.quantity + 1}">+</button>
-        </div>
-      </div>
-      <button class="icon-button" type="button" data-action="remove-cart-item" data-cart-item-id="${item.cartItemId}" aria-label="삭제">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-    </article>
-  `;
 }
 
 // 4. 전역 초기화
