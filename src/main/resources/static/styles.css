@@ -1110,11 +1110,19 @@ img {
   border: 0;
   background: var(--canvas);
   color: var(--ink-muted);
+  border-radius: 999px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.auth-tab:hover {
+  background: var(--surface-strong);
 }
 
 .auth-tab.is-active {
-  background: var(--ink);
-  color: var(--canvas);
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
 }
 
 .auth-pane {

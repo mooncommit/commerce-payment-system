@@ -866,6 +866,11 @@ async function signup() {
       showToast("비밀번호는 8자 이상이어야 합니다.", "error");
       return;
     }
+    const phone = document.getElementById("signupPhone")?.value.trim() || "";
+    if (phone && !/^\d{2,3}-\d{3,4}-\d{4}$/.test(phone)) {
+      showToast("연락처는 반드시 하이픈(-)을 포함하여 입력해주세요.", "error");
+      return;
+    }
     if (!name) {
       showToast("이름을 입력해주세요.", "error");
       return;
