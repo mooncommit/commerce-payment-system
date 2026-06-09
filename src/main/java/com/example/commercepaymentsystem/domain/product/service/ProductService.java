@@ -60,8 +60,19 @@ public class ProductService {
     }
 
     // 전체 조회
-    public PageResponse<ProductResponse> findAllProducts(Pageable pageable) {
-        Page<Product> productPage = productRepository.findAll(pageable);
+    public PageResponse<ProductResponse> findAllProducts(String categoryCode, String statusString, Pageable pageable) {
+        SaleStatus saleStatus = null;
+        if (statusString != null && !statusString.isBlank()) {
+            try {
+                saleStatus = SaleStatus.valueOf(statusString);
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid status
+            }
+        }
+        
+        String category = (categoryCode != null && !categoryCode.isBlank()) ? categoryCode : null;
+
+        Page<Product> productPage = productRepository.findAllByFilters(category, saleStatus, pageable);
 
         List<ProductResponse> content = productPage.getContent().stream()
                 .map(ProductResponse::from)

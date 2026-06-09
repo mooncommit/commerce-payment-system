@@ -1,27 +1,56 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주문 내역 - Follow Commerce</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>주문 내역 : Follow Commerce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="data:," />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Libre+Caslon+Text:wght@400;700&family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260608-refund-pages" />
+  <script defer src="orders.js?v=20260608-refund-pages"></script>
 </head>
 <body>
-    <main class="page-container">
-        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">주문 내역</h2>
-        <div id="loading" style="text-align: center; padding: 40px;">불러오는 중...</div>
-        
-        <div id="ordersContainer" style="display: none; flex-direction: column; gap: 20px;">
-            <!-- Orders will be injected here -->
-        </div>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="icon-button mobile-only" href="/" aria-label="쇼핑몰로 이동">
+      <span class="material-symbols-outlined">storefront</span>
+    </a>
+    <a class="brand" href="/">Follow Commerce</a>
+    <nav class="primary-nav" aria-label="주요 메뉴">
+      <a class="nav-link" href="/">쇼핑</a>
+      <a class="nav-link is-active" href="/orders.html">주문 내역</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button" id="refreshOrdersButton" type="button" aria-label="새로고침">
+        <span class="material-symbols-outlined">refresh</span>
+      </button>
+      <a class="icon-button" href="/" aria-label="쇼핑몰로 이동">
+        <span class="material-symbols-outlined">storefront</span>
+      </a>
+    </div>
+  </div>
+</header>
 
-        <div id="noOrders" style="text-align: center; padding: 60px 0; color: var(--color-text-muted); display: none;">
-            <p>주문 내역이 없습니다.</p>
-            <button class="btn-black" style="margin-top: 20px; padding: 12px 24px;" onclick="window.location.href='/index.html'">쇼핑 계속하기</button>
-        </div>
-    </main>
+<main>
+  <section class="content-band orders-band">
+    <div class="section-heading">
+      <div>
+        <h1 class="page-title">주문 내역</h1>
+        <p id="ordersMeta">주문 정보를 불러오는 중입니다.</p>
+      </div>
+      <div class="filter-bar">
+        <a class="ghost-button link-button" href="/">쇼핑 계속하기</a>
+      </div>
+    </div>
+    <div class="orders-list" id="ordersList" aria-live="polite">
+      <div class="empty-state">주문 정보를 불러오는 중입니다.</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </section>
+</main>
 
-    <script src="app.js"></script>
-    <script src="orders.js"></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

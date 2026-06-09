@@ -1,31 +1,62 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>결제 취소 - Follow Commerce</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>환불 요청 : Follow Commerce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="data:," />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Libre+Caslon+Text:wght@400;700&family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260608-refund-pages" />
+  <script defer src="refund.js?v=20260608-refund-pages"></script>
 </head>
 <body>
-    <main class="page-container">
-        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">결제 취소 (환불)</h2>
-        
-        <div class="card" style="padding: 24px; max-width: 600px; margin: 0 auto;">
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">주문 번호</label>
-                <input type="text" id="orderId" class="input-field" readonly style="background-color: #f8f9fa;">
-            </div>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="icon-button mobile-only" href="/orders.html" aria-label="주문 내역으로 이동">
+      <span class="material-symbols-outlined">receipt_long</span>
+    </a>
+    <a class="brand" href="/">Follow Commerce</a>
+    <nav class="primary-nav" aria-label="주요 메뉴">
+      <a class="nav-link" href="/">쇼핑</a>
+      <a class="nav-link" href="/orders.html">주문 내역</a>
+      <a class="nav-link is-active" href="#" aria-current="page">환불 요청</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button" id="refreshRefundButton" type="button" aria-label="새로고침">
+        <span class="material-symbols-outlined">refresh</span>
+      </button>
+      <a class="icon-button" href="/orders.html" aria-label="주문 내역으로 이동">
+        <span class="material-symbols-outlined">receipt_long</span>
+      </a>
+    </div>
+  </div>
+</header>
 
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">취소 사유</label>
-                <input type="text" id="reason" class="input-field" placeholder="예: 단순 변심" required>
-            </div>
+<main>
+  <section class="content-band refund-band">
+    <div class="section-heading">
+      <div>
+        <h1 class="page-title">환불 요청</h1>
+        <p id="refundMeta">주문 정보를 불러오는 중입니다.</p>
+      </div>
+      <div class="filter-bar">
+        <a class="ghost-button link-button" href="/orders.html">주문 내역</a>
+      </div>
+    </div>
 
-            <button id="btnRefund" class="btn-black" style="width: 100%; padding: 16px; font-size: 16px;">결제 취소 요청</button>
-        </div>
-    </main>
+    <div class="refund-layout">
+      <section class="refund-panel" aria-label="주문 정보">
+        <div id="refundOrderSummary" class="empty-state">주문 정보를 불러오는 중입니다.</div>
+      </section>
+      <section class="refund-panel" aria-label="환불 입력">
+        <div id="refundFormArea" class="empty-state">환불 가능 여부를 확인하는 중입니다.</div>
+      </section>
+    </div>
+  </section>
+</main>
 
-    <script src="app.js"></script>
-    <script src="refund.js"></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

@@ -87,7 +87,7 @@ public class CartService {
 
     // 장바구니 상품 수량 변경
     @Transactional
-    public void updateQuantity(Long memberId, Long productId, int quantity) {
+    public void updateQuantity(Long memberId, Long cartItemId, int quantity) {
         if (quantity <= 0) {
             throw new BusinessException(ErrorCode.INVALID_CART_QUANTITY);
         }
@@ -95,23 +95,41 @@ public class CartService {
         Cart cart = cartRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
 
-        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        if (!cartItem.getCart().getId().equals(cart.getId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_CART_ITEM);
+        }
 
         cartItem.updateQuantity(quantity);
     }
 
     // 장바구니 상품 개별 삭제
     @Transactional
-    public void removeItem(Long memberId, Long productId) {
+    public void removeItem(Long memberId, Long cartItemId) {
         Cart cart = cartRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
-        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
+        
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+        
+        if (!cartItem.getCart().getId().equals(cart.getId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_CART_ITEM);
+        }
+
         if (cartItem.isDeleted()) {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND);
         }
         cartItem.delete();
+    }
+
+    // 장바구니 비우기
+    @Transactional
+    public void clearCart(Long memberId) {
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
+        cart.getCartItems().forEach(CartItem::delete);
     }
 
     // 결제용 상품 조회 예시
