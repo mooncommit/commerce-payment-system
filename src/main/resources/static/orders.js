@@ -143,6 +143,18 @@ async function loadOrders(page = 1) {
   }
 }
 
+async function cancelPendingOrder(orderId) {
+  if (!confirm("결제 대기 중인 주문을 취소하시겠습니까?")) return;
+  try {
+    await api(`/api/orders/${orderId}/status`, { method: "PATCH" });
+    showToast("결제 대기 주문이 취소되었습니다.");
+    loadOrders(state.currentPage || 1);
+  } catch (error) {
+    showToast(formatError(error), "error");
+  }
+}
+window.cancelPendingOrder = cancelPendingOrder;
+
 function renderLoggedOut() {
   els.ordersMeta.textContent = "로그인이 필요합니다.";
   els.ordersList.innerHTML = `
@@ -206,11 +218,15 @@ function renderOrderCard(detail) {
         </div>
       </div>
       <div class="order-actions">
-        <a class="ghost-button link-button" href="/refund.html?orderId=${encodeURIComponent(order.orderId)}">상세 보기</a>
+        ${
+          paymentStatus === "PENDING"
+            ? `<button class="ghost-button" type="button" onclick="cancelPendingOrder(${order.orderId || order.id})">주문 취소</button>`
+            : `<a class="ghost-button link-button" href="/refund.html?orderId=${encodeURIComponent(order.orderId || order.id)}">상세 보기</a>`
+        }
         ${
           refundable
-            ? `<a class="primary-button link-button" href="/refund.html?orderId=${encodeURIComponent(order.orderId)}">환불하기</a>`
-            : `<button class="primary-button" type="button" disabled>${escapeHtml(refundUnavailableLabel(paymentStatus, remainingQuantity))}</button>`
+            ? `<a class="primary-button link-button" href="/refund.html?orderId=${encodeURIComponent(order.orderId || order.id)}">환불하기</a>`
+            : (paymentStatus !== "PENDING" ? `<button class="primary-button" type="button" disabled>${escapeHtml(refundUnavailableLabel(paymentStatus, remainingQuantity))}</button>` : '')
         }
       </div>
     </article>
