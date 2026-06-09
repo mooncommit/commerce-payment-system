@@ -594,7 +594,7 @@ function renderCartItem(item) {
         </div>
       </div>
       <button class="icon-button" type="button" data-action="remove-cart-item" data-cart-item-id="${item.cartItemId}" aria-label="삭제">
-        <span class="material-symbols-outlined">close</span>
+        <span class="material-symbols-rounded">close</span>
       </button>
     </article>
   `;
