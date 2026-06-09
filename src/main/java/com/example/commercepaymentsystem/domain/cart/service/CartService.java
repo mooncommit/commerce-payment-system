@@ -110,10 +110,10 @@ public class CartService {
     public void removeItem(Long memberId, Long cartItemId) {
         Cart cart = cartRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_EMPTY));
-        
+
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
-        
+
         if (!cartItem.getCart().getId().equals(cart.getId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN_CART_ITEM);
         }

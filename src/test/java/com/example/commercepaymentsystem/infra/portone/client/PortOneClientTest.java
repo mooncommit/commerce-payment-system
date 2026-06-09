@@ -49,7 +49,9 @@ class PortOneClientTest {
         RestClient.Builder builder = RestClient.builder()
                 .baseUrl("https://api.portone.test");
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        PortOneClient client = new PortOneClient(builder.build(), new PortOneProperties());
+        PortOneProperties properties = new PortOneProperties();
+        properties.setApiSecret("test-api-secret");
+        PortOneClient client = new PortOneClient(builder.build(), properties);
 
         return new TestPortOneClient(client, server);
     }

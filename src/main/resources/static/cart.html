@@ -84,7 +84,7 @@
             }
 
             function renderCart() {
-                if (!cartData || !cartData.items || cartData.items.length === 0) {
+                if (!cartData || !cartData.content || cartData.content.length === 0) {
                     document.getElementById('cartContent').style.display = 'none';
                     document.getElementById('emptyCart').style.display = 'block';
                     return;
@@ -94,19 +94,21 @@
                 document.getElementById('cartContent').style.display = 'flex';
 
                 const list = document.getElementById('cartItemsList');
-                list.innerHTML = cartData.items.map(item => `
+                list.innerHTML = cartData.content.map(item => `
                     <div style="display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f1f3f4; align-items: center;">
-                        <img src="${item.imageUrl || 'https://via.placeholder.com/80'}" alt="${item.productName}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                        <img src="${item.imageUrl || getProductImage(item.productName)}" alt="${item.productName}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
                         <div style="flex: 1;">
                             <div style="font-weight: 500; font-size: 15px; margin-bottom: 4px;">${item.productName}</div>
                             <div style="font-size: 14px; color: var(--color-text-muted); margin-bottom: 8px;">${item.price.toLocaleString()}원</div>
                             <div style="display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: 4px; width: fit-content;">
-                                <div style="width: 40px; text-align: center; font-size: 14px; padding: 4px 0;">수량: ${item.quantity}</div>
+                                <button class="quantity-btn" onclick="updateQuantity(${item.productId}, ${item.quantity - 1})" style="padding: 4px 10px; background: none; border: none; cursor: pointer; font-weight: bold; font-size: 14px;">-</button>
+                                <span style="width: 30px; text-align: center; font-size: 14px; display: inline-block;">${item.quantity}</span>
+                                <button class="quantity-btn" onclick="updateQuantity(${item.productId}, ${item.quantity + 1})" style="padding: 4px 10px; background: none; border: none; cursor: pointer; font-weight: bold; font-size: 14px;">+</button>
                             </div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">${(item.price * item.quantity).toLocaleString()}원</div>
-                            <button onclick="removeItem(${item.cartItemId})" style="font-size: 13px; color: var(--color-danger); text-decoration: underline;">삭제</button>
+                            <button onclick="removeItem(${item.productId})" style="font-size: 13px; color: var(--color-danger); text-decoration: underline;">삭제</button>
                         </div>
                     </div>
                 `).join('');
@@ -118,8 +120,8 @@
                 const usePointInput = document.getElementById('inputUsePoint');
                 let usePoint = parseInt(usePointInput.value) || 0;
                 
-                const totalAmount = cartData.totalPrice;
-                const myPoint = profileData.point;
+                const totalAmount = cartData.content.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const myPoint = profileData.pointBalance;
 
                 if (usePoint > myPoint || usePoint > totalAmount) {
                     document.getElementById('pointError').style.display = 'block';
@@ -136,9 +138,26 @@
                 document.getElementById('summaryPgAmount').innerText = pgAmount.toLocaleString() + '원';
             }
 
-            window.removeItem = async (itemId) => {
+            window.updateQuantity = async (productId, newQuantity) => {
+                if (newQuantity <= 0) {
+                    alert('수량은 1개 이상이어야 합니다.');
+                    return;
+                }
                 try {
-                    await fetchApi(`/carts/items/${itemId}`, { method: 'DELETE' });
+                    await fetchApi(`/carts/items/${productId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ quantity: newQuantity })
+                    });
+                    await loadCart();
+                    updateCartBadge();
+                } catch (e) {
+                    alert(e.message || '수량 변경 실패');
+                }
+            };
+
+            window.removeItem = async (productId) => {
+                try {
+                    await fetchApi(`/carts/items/${productId}`, { method: 'DELETE' });
                     await loadCart();
                     updateCartBadge();
                 } catch (e) {
@@ -149,8 +168,8 @@
             document.getElementById('inputUsePoint').addEventListener('input', updateSummary);
             
             document.getElementById('btnUseAllPoints').addEventListener('click', () => {
-                const totalAmount = cartData.totalPrice;
-                const myPoint = profileData.point;
+                const totalAmount = cartData.content.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const myPoint = profileData.pointBalance;
                 document.getElementById('inputUsePoint').value = Math.min(totalAmount, myPoint);
                 updateSummary();
             });
@@ -162,9 +181,10 @@
                 btn.innerText = '주문 생성 중...';
 
                 try {
+                    const cartItemIds = cartData.content.map(item => item.cartItemId);
                     const orderData = await fetchApi('/carts/orders', {
                         method: 'POST',
-                        body: JSON.stringify({ usePointAmount: usePoint })
+                        body: JSON.stringify({ cartItemIds: cartItemIds, usePointAmount: usePoint })
                     });
                     sessionStorage.setItem('checkoutOrderData', JSON.stringify(orderData));
                     window.location.href = '/payment.html';
