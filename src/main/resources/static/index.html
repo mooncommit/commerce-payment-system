@@ -45,13 +45,32 @@
 </header>
 
 <main>
-  <section class="hero-section">
-    <div class="hero-media">
-      <img src="assets/products/images/integrated_banner.png" alt="Integrated Commerce Banner" />
-      <div class="hero-copy">
-        <h1>일상을 채우는 모든 것</h1>
-        <p>전자기기, 도서, 패션, 라이프스타일 굿즈까지. Follow Commerce에서 프리미엄 쇼핑을 경험하세요.</p>
+  <section class="hero-section" id="heroSlider">
+    <div class="hero-slider-container">
+      <div class="hero-slide is-active">
+        <img src="assets/products/images/banner_1.png" alt="Integrated Commerce Banner 1" />
+        <div class="hero-copy">
+          <h1>일상을 채우는 모든 것</h1>
+          <p>전자기기, 도서, 패션, 라이프스타일 굿즈까지. Follow Commerce에서 프리미엄 쇼핑을 경험하세요.</p>
+        </div>
       </div>
+      <div class="hero-slide">
+        <img src="assets/products/images/banner_2.png" alt="Integrated Commerce Banner 2" />
+        <div class="hero-copy">
+          <h1>당신의 라이프스타일</h1>
+          <p>트렌디한 패션 아이템과 감성적인 잡화 컬렉션을 지금 만나보세요.</p>
+        </div>
+      </div>
+    </div>
+    <button class="slider-btn prev-btn" aria-label="이전 배너">
+      <span class="material-symbols-rounded">chevron_left</span>
+    </button>
+    <button class="slider-btn next-btn" aria-label="다음 배너">
+      <span class="material-symbols-rounded">chevron_right</span>
+    </button>
+    <div class="slider-dots">
+      <button class="dot is-active" aria-label="1번 배너"></button>
+      <button class="dot" aria-label="2번 배너"></button>
     </div>
   </section>
 

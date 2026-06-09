@@ -122,6 +122,8 @@ const state = {
   pointBalance: 0,
   currentPage: 0,
   loading: false,
+  bannerIndex: 0,
+  bannerInterval: null,
 };
 
 const els = {};
@@ -178,6 +180,12 @@ function cacheElements() {
   ].forEach((id) => {
     els[id] = document.getElementById(id);
   });
+
+  // Slider Elements
+  els.heroSlides = document.querySelectorAll(".hero-slide");
+  els.sliderDots = document.querySelectorAll(".slider-dots .dot");
+  els.prevBannerBtn = document.querySelector(".prev-btn");
+  els.nextBannerBtn = document.querySelector(".next-btn");
 }
 
 function bindEvents() {
@@ -205,6 +213,46 @@ function bindEvents() {
       }
     });
   });
+
+  if (els.prevBannerBtn && els.nextBannerBtn) {
+    els.prevBannerBtn.addEventListener("click", () => moveBanner(-1));
+    els.nextBannerBtn.addEventListener("click", () => moveBanner(1));
+    els.sliderDots.forEach((dot, index) => {
+      dot.addEventListener("click", () => setBanner(index));
+    });
+    startBannerAutoPlay();
+  }
+}
+
+function startBannerAutoPlay() {
+  stopBannerAutoPlay();
+  state.bannerInterval = setInterval(() => {
+    moveBanner(1);
+  }, 5000);
+}
+
+function stopBannerAutoPlay() {
+  if (state.bannerInterval) {
+    clearInterval(state.bannerInterval);
+  }
+}
+
+function setBanner(index) {
+  if (!els.heroSlides || !els.heroSlides.length) return;
+  els.heroSlides[state.bannerIndex].classList.remove("is-active");
+  els.sliderDots[state.bannerIndex].classList.remove("is-active");
+
+  state.bannerIndex = index;
+  if (state.bannerIndex < 0) state.bannerIndex = els.heroSlides.length - 1;
+  if (state.bannerIndex >= els.heroSlides.length) state.bannerIndex = 0;
+
+  els.heroSlides[state.bannerIndex].classList.add("is-active");
+  els.sliderDots[state.bannerIndex].classList.add("is-active");
+  startBannerAutoPlay(); // Reset timer on manual interaction
+}
+
+function moveBanner(direction) {
+  setBanner(state.bannerIndex + direction);
 }
 
 async function handleClick(event) {
@@ -238,6 +286,7 @@ async function handleClick(event) {
     els.categoryFilter.value = categoryTarget.dataset.categoryNav;
     updateCategoryNav();
     scrollToSection("products");
+    state.loading = false; // Force reset in case it was stuck or running
     return loadProducts(0);
   }
 
