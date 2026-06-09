@@ -5,7 +5,6 @@ import com.example.commercepaymentsystem.domain.auth.jwt.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -40,19 +39,22 @@ public class SecurityConfig {
                                         "/*.css",
                                         "/*.js",
                                         "/*.svg",
+                                        "/*.png",
+                                        "/*.webp",
+                                        "/css/**",
+                                        "/js/**",
                                         "/images/**",
-                                        "/favicon.ico",
+                                        "/assets/**",
                                         "/api/auth/signup",
                                         "/api/auth/login",
-                                        "/api/auth/reissue",
-                                        "/api/webhooks/portone",
-                                        "/api/config/portone",
+                                        "/api/products",
+                                        "/api/products/**",
                                         "/api/payments/config",
-                                        "/actuator/health",
-                                        "/actuator/health/**"
+                                        "/api/payments/webhook",
+                                        "/v3/api-docs/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html"
                                 ).permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
-
                                 .anyRequest().authenticated()
                 )
 

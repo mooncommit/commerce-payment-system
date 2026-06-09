@@ -1,7 +1,11 @@
 package com.example.commercepaymentsystem.domain.payment.dto;
 
-public record PortOneConfigResponse(
-        String storeId,
-        String channelKey
-) {
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public class PortOneConfigResponse {
+    private String storeId;
+    private String channelKey;
 }

@@ -31,8 +31,10 @@ public class ProductController {
     // 전체 조회
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getProducts(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status,
             @PageableDefault(size = 10) Pageable pageable) {
-        PageResponse<ProductResponse> response = productService.findAllProducts(pageable);
+        PageResponse<ProductResponse> response = productService.findAllProducts(category, status, pageable);
         return ResponseEntity.ok(ApiResponse.success(response, "상품 조회 성공"));
     }
 

@@ -3,10 +3,10 @@ package com.example.commercepaymentsystem.domain.payment.controller;
 import com.example.commercepaymentsystem.domain.auth.dto.LoginMember;
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmRequest;
 import com.example.commercepaymentsystem.domain.payment.dto.PaymentConfirmResponse;
+import com.example.commercepaymentsystem.domain.payment.dto.PortOneConfigResponse;
 import com.example.commercepaymentsystem.domain.payment.facade.PaymentFacade;
 import com.example.commercepaymentsystem.global.response.ApiResponse;
 import com.example.commercepaymentsystem.infra.portone.config.PortOneProperties;
-import com.example.commercepaymentsystem.infra.portone.dto.PortOneConfigResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ public class PaymentController {
     private final PortOneProperties portOneProperties;
 
     @GetMapping("/config")
-    public ResponseEntity<ApiResponse<PortOneConfigResponse>> getConfig() {
+    public ResponseEntity<ApiResponse<PortOneConfigResponse>> getPortOneConfig() {
         return ResponseEntity.ok(ApiResponse.success(
                 new PortOneConfigResponse(portOneProperties.getStoreId(), portOneProperties.getChannelKey()),
                 "포트원 설정 조회 성공"

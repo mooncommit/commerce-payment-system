@@ -50,6 +50,10 @@ public class Member extends BaseEntity {
         this.pointBalance -= amount;
     }
 
+    public void revokePoint(Long amount) {
+        this.pointBalance -= amount;
+    }
+
     public Member(String email, String passwordHash, String name, String phoneNumber) {
         this.email = email;
         this.passwordHash = passwordHash;

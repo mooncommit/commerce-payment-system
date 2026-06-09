@@ -1,76 +1,180 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Follow Commerce</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Follow Commerce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="data:," />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Libre+Caslon+Text:wght@400;700&family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <link rel="stylesheet" href="styles.css?v=20260608-refund-pages" />
+  <script defer src="app.js?v=20260608-refund-pages"></script>
 </head>
 <body>
-    <main class="page-container">
-        <!-- Hero Section -->
-        <div class="hero-banner-container">
-            <div class="hero-banner">
-                <img src="/images/banner_digital.png" alt="Digital Sale">
-            </div>
-            <div class="hero-banner">
-                <img src="/images/banner_fashion.png" alt="Fashion Sale">
-            </div>
+<header class="site-header">
+  <div class="header-inner">
+    <button class="icon-button mobile-only" type="button" data-action="scroll-products" aria-label="상품으로 이동">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <a class="brand" href="/">Follow Commerce</a>
+    <nav class="primary-nav" aria-label="주요 메뉴">
+      <button class="nav-link is-active" type="button" data-category-nav="">전체</button>
+      <button class="nav-link" type="button" data-category-nav="DIGITAL">전자기기</button>
+      <button class="nav-link" type="button" data-category-nav="ACCESSORY">잡화</button>
+      <button class="nav-link" type="button" data-category-nav="FASHION">의류</button>
+      <button class="nav-link" type="button" data-category-nav="BOOK">도서</button>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button" type="button" data-action="focus-search" aria-label="검색">
+        <span class="material-symbols-outlined">search</span>
+      </button>
+      <a class="icon-button" href="/orders.html" aria-label="주문 내역">
+        <span class="material-symbols-outlined">receipt_long</span>
+      </a>
+      <button class="icon-button" type="button" data-action="open-auth" aria-label="계정">
+        <span class="material-symbols-outlined">person</span>
+      </button>
+      <button class="icon-button cart-trigger" type="button" data-action="open-cart" aria-label="장바구니">
+        <span class="material-symbols-outlined">shopping_bag</span>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero-section">
+    <div class="hero-media">
+      <img src="assets/products/images/integrated_banner.png" alt="Integrated Commerce Banner" />
+      <div class="hero-copy">
+        <h1>일상을 채우는 모든 것</h1>
+        <p>전자기기, 도서, 패션, 라이프스타일 굿즈까지. Follow Commerce에서 프리미엄 쇼핑을 경험하세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-band products-band" id="products">
+    <div class="section-heading">
+      <div>
+        <h2 id="productTitle">전체 상품</h2>
+        <p id="productMeta">상품을 불러오는 중입니다.</p>
+      </div>
+      <div class="filter-bar" aria-label="상품 필터">
+        <input class="search-input" id="searchInput" type="search" placeholder="상품명 검색" />
+        <select id="categoryFilter" aria-label="카테고리">
+          <option value="">전체</option>
+          <option value="DIGITAL">전자기기</option>
+          <option value="ACCESSORY">잡화</option>
+          <option value="FASHION">의류</option>
+          <option value="BOOK">도서</option>
+        </select>
+        <select id="statusFilter" aria-label="판매 상태">
+          <option value="">판매 상태</option>
+          <option value="ON_SALE">판매중</option>
+          <option value="SOLD_OUT">품절</option>
+        </select>
+        <select id="sortFilter" aria-label="정렬">
+          <option value="createdAt,desc">최신순</option>
+          <option value="price,asc">낮은 가격순</option>
+          <option value="price,desc">높은 가격순</option>
+        </select>
+      </div>
+    </div>
+    <div class="product-grid" id="productGrid" aria-live="polite"></div>
+    <div class="pagination-row">
+      <button class="ghost-button" type="button" id="prevPageBtn">이전</button>
+      <span id="pageMeta">1 / 1</span>
+      <button class="ghost-button" type="button" id="nextPageBtn">다음</button>
+    </div>
+  </section>
+
+</main>
+
+<aside class="drawer" id="productDrawer" aria-hidden="true">
+  <div class="drawer-panel product-panel">
+    <button class="icon-button drawer-close" type="button" data-action="close-product" aria-label="닫기">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <div id="productDetail"></div>
+  </div>
+</aside>
+
+<aside class="drawer" id="cartDrawer" aria-hidden="true">
+  <div class="drawer-panel cart-panel">
+    <div class="drawer-header">
+      <h2>장바구니</h2>
+      <button class="icon-button" type="button" data-action="close-cart" aria-label="닫기">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="cart-body" id="cartItems"></div>
+    <div class="checkout-summary">
+      <div class="summary-line">
+        <span>상품 금액</span>
+        <strong id="cartSubtotal">0원</strong>
+      </div>
+      <div class="point-row">
+        <label for="usePointInput">포인트 사용</label>
+        <div class="point-control">
+          <input id="usePointInput" type="number" min="0" step="1" value="0" />
+          <button class="ghost-button small" type="button" data-action="use-all-points">전액</button>
         </div>
+        <span id="pointHint">보유 포인트 0P</span>
+      </div>
+      <div class="summary-line total">
+        <span>결제 예정 금액</span>
+        <strong id="checkoutTotal">0원</strong>
+      </div>
+      <button class="primary-button" type="button" data-action="create-order">결제하기</button>
+      <button class="ghost-button full" type="button" data-action="clear-cart">전체 비우기</button>
+    </div>
+  </div>
+</aside>
 
-        <h2 class="section-title">
-            <span class="highlight">🔥</span> 추천 상품
-        </h2>
-
-        <!-- Product Grid -->
-        <div id="productGrid" class="grid-4">
-            <!-- Products will be injected here by JS -->
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--color-text-muted);">
-                상품을 불러오는 중입니다...
-            </div>
+<dialog class="auth-dialog" id="authDialog">
+  <form method="dialog" class="auth-card">
+    <button class="icon-button dialog-close" value="cancel" aria-label="닫기">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab is-active" type="button" data-auth-tab="login">로그인</button>
+      <button class="auth-tab" type="button" data-auth-tab="signup">회원가입</button>
+    </div>
+    <section class="auth-pane is-active" id="loginPane">
+      <label>이메일 <input id="loginEmail" type="email" autocomplete="email" /></label>
+      <label>비밀번호 <input id="loginPassword" type="password" autocomplete="current-password" /></label>
+      <button class="primary-button" type="button" data-action="login">로그인</button>
+    </section>
+    <section class="auth-pane" id="signupPane">
+      <label>이름 <input id="signupName" type="text" autocomplete="name" /></label>
+      <label>이메일 <input id="signupEmail" type="email" /></label>
+      <label>비밀번호 <input id="signupPassword" type="password" autocomplete="new-password" /></label>
+      <label>연락처 <input id="signupPhone" type="tel" autocomplete="tel" placeholder="010-1234-5678" /></label>
+      <button class="primary-button" type="button" data-action="signup">회원가입</button>
+    </section>
+    <section class="auth-account hidden" id="authAccountPane" aria-live="polite">
+      <div class="auth-account-header">
+        <span class="label">내 정보</span>
+        <strong id="authUserName">비로그인</strong>
+        <span id="authUserEmail">-</span>
+      </div>
+      <div class="auth-account-grid">
+        <div>
+          <span class="label">현재 포인트</span>
+          <strong id="authPointBalance">-</strong>
         </div>
-    </main>
+        <div>
+          <span class="label">회원 ID</span>
+          <strong id="authUserId">-</strong>
+        </div>
+      </div>
+      <button class="ghost-button full hidden" id="logoutButton" type="button" data-action="logout">로그아웃</button>
+    </section>
+  </form>
+</dialog>
 
-    <script src="app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const keyword = getUrlParameter('keyword');
-            const productGrid = document.getElementById('productGrid');
-
-            try {
-                const url = keyword ? `/products?keyword=${encodeURIComponent(keyword)}` : '/products';
-                const response = await fetchApi(url);
-                const products = response.content || response; // Handle PageResponse or List
-
-                if (products.length === 0) {
-                    productGrid.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 0; color: var(--color-text-muted);">
-                            <p>검색 결과가 없습니다.</p>
-                            <a href="/index.html" class="btn-black" style="display: inline-block; margin-top: 20px; text-decoration: none;">전체 상품 보기</a>
-                        </div>
-                    `;
-                    return;
-                }
-
-                productGrid.innerHTML = products.map(product => `
-                    <a href="/product.html?id=${product.id}" class="product-card" style="text-decoration: none; color: inherit;">
-                        <img src="${product.imageUrl || getProductImage(product.name)}" alt="${product.name}" class="product-image">
-                        <div class="product-info">
-                            <div class="product-title">${product.name}</div>
-                            <div class="product-price">${product.price.toLocaleString()}원</div>
-                        </div>
-                    </a>
-                `).join('');
-
-            } catch (error) {
-                console.error('Failed to load products', error);
-                productGrid.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--color-danger);">
-                        상품을 불러오는데 실패했습니다.
-                    </div>
-                `;
-            }
-        });
-    </script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
