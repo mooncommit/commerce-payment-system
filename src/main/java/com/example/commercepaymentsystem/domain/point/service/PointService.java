@@ -181,7 +181,7 @@ public class PointService {
             return;
         }
 
-        member.decreasePoint(amount);
+        member.revokePoint(amount);
         savePoint(member, payment, PointType.REVOKE, -amount, "적립 포인트 회수", key);
     }
 

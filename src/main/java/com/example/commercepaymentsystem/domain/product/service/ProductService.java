@@ -69,7 +69,7 @@ public class ProductService {
                 // Ignore invalid status
             }
         }
-        
+
         String category = (categoryCode != null && !categoryCode.isBlank()) ? categoryCode : null;
 
         Page<Product> productPage = productRepository.findAllByFilters(category, saleStatus, pageable);

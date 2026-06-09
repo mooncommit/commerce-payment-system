@@ -93,12 +93,18 @@
                     window.location.href = '/index.html';
                 } else {
                     const name = document.getElementById('name').value;
-                    const phone = document.getElementById('phone').value;
+                    let phone = document.getElementById('phone').value;
                     
-                    const response = await fetch('/api/member/signup', {
+                    // 01012341234 -> 010-1234-1234 형식으로 변환
+                    const numbersOnly = phone.replace(/[^0-9]/g, '');
+                    if (numbersOnly.length === 11) {
+                        phone = numbersOnly.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+                    }
+                    
+                    const response = await fetch('/api/auth/signup', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password, name, phone })
+                        body: JSON.stringify({ email, password, name, phoneNumber: phone })
                     });
                     
                     const data = await response.json();

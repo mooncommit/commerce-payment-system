@@ -1,6 +1,7 @@
 package com.example.commercepaymentsystem.infra.portone.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -15,8 +16,8 @@ public class PortOneConfig {
     @Bean
     public RestClient portOneRestClient() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(3000);  // 3초
-        requestFactory.setReadTimeout(60000);    // PortOne 권장 최소 60초
+        requestFactory.setConnectTimeout(3000);
+        requestFactory.setReadTimeout(60000);
 
         return RestClient.builder()
                 .requestFactory(requestFactory)

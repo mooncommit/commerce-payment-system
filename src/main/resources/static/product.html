@@ -61,7 +61,7 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('productDetail').style.display = 'flex';
 
-                document.getElementById('productImage').src = product.imageUrl || 'https://via.placeholder.com/600x600?text=No+Image';
+                document.getElementById('productImage').src = product.imageUrl || getProductImage(product.name);
                 document.getElementById('productName').innerText = product.name;
                 document.getElementById('productPrice').innerText = product.price.toLocaleString() + '원';
                 document.getElementById('productDescription').innerText = product.description;
@@ -101,9 +101,8 @@
                     return;
                 }
                 try {
-                    await fetchApi('/carts', {
-                        method: 'POST',
-                        body: JSON.stringify({ productId: product.id, quantity })
+                    await fetchApi(`/carts/items?productId=${product.id}&quantity=${quantity}`, {
+                        method: 'POST'
                     });
                     alert('장바구니에 추가되었습니다.');
                     updateCartBadge();
