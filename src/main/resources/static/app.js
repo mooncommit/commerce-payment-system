@@ -649,6 +649,8 @@ async function createOrder() {
     showToast("장바구니에 상품이 없습니다.", "error");
     return;
   }
+  if (state.loading) return;
+  state.loading = true;
 
   const usedPointAmount = normalizeUsePoint();
   const cartItemIds = state.cart.items.map((item) => item.cartItemId);
@@ -693,11 +695,15 @@ async function createOrder() {
     showToast(formatError(error), "error");
     await refreshCart(false);
     await refreshAccount(false);
+  } finally {
+    state.loading = false;
   }
 }
 
 async function createDirectOrder() {
   if (!requireLogin()) return;
+  if (state.loading) return;
+  state.loading = true;
   const productId = Number(els.productDetail.dataset.productId);
   const qtyInput = document.getElementById("detailQuantity");
   const quantity = Number(qtyInput?.value || 1);
@@ -747,6 +753,8 @@ async function createDirectOrder() {
     window.location.href = `/payment.html?${params.toString()}`;
   } catch (error) {
     showToast(formatError(error), "error");
+  } finally {
+    state.loading = false;
   }
 }
 
